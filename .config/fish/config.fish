@@ -18,3 +18,17 @@ set -g theme_show_exit_status yes
 set -g theme_newline_cursor yes
 set -g theme_newline_prompt "\e[1m$cprompt_custom \e[0m" 
 neofetch
+
+### CUSTOM ALIAS
+#
+# alias pacman "pacman -S --needed"
+alias rdir "rm -rf"
+alias cpr "cp -r"
+alias clear "clear ; neofetch "
+#alias yay "yay -S"
+
+# tabtab source for electron-forge package
+# uninstall by removing these lines or running `tabtab uninstall electron-forge`
+[ -f /home/neoterux/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.fish ]; and . /home/neoterux/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.fish# ghcup-env
+set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX $HOME
+test -f /home/neoterux/.ghcup/env ; and set -gx PATH $HOME/.cabal/bin /home/neoterux/.ghcup/bin $PATH
