@@ -15,6 +15,7 @@ set encoding=utf-8
 set sw=2
 set relativenumber
 set signcolumn=yes
+set termguicolors
 filetype plugin indent on
 
 " Vim plugin declaration file
@@ -25,6 +26,7 @@ so ~/.vim/plugin-config.vim
 so ~/.vim/maps.vim
 
 colorscheme gruvbox
+" colorscheme bat
 
 let g:gruvbox_contrast_dark = "hard"
 

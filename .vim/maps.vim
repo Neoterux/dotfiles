@@ -57,7 +57,7 @@ function! OpenTerminal()
 		execute "q"
 	else 
 		"open terminal
-		execute "vsp term://fish"
+		execute "vsp term://$SHELL"
 		execute "set nonu"
 		execute "set nornu"
 

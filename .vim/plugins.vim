@@ -4,6 +4,7 @@ call plug#begin('~/.vim/plugged')
 Plug 'sheerun/vim-polyglot'
 Plug 'neovimhaskell/haskell-vim'
 Plug 'junegunn/fzf'
+Plug 'jamespwilliams/bat.vim'
 
 
 " Status bar
