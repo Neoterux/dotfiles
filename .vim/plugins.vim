@@ -1,49 +1,60 @@
-call plug#begin('~/.vim/plugged')
+set rtp+=~/.vim/bundle/Vundle.vim
+
+call vundle#begin()
 
 " Syntax
-Plug 'sheerun/vim-polyglot'
-Plug 'neovimhaskell/haskell-vim'
-Plug 'junegunn/fzf'
-Plug 'jamespwilliams/bat.vim'
+Plugin 'junegunn/fzf'
+Plugin 'neovimhaskell/haskell-vim'
+Plugin 'posva/vim-vue'
+Plugin 'cespare/vim-toml'
 
+" Vundle manage Vundle
+Plugin 'VundleVim/Vundle.vim'
 
-" Status bar
-Plug 'maximbaz/lightline-ale'
-Plug 'itchyny/lightline.vim'
+" Themes & Visual
+Plugin 'morhetz/gruvbox'
+Plugin 'vim-airline/vim-airline'
+Plugin 'vim-airline/vim-airline-themes'
+Plugin 'ryanoasis/vim-devicons'
+Plugin 'stevearc/dressing.nvim'
+Plugin 'xuyuanp/nerdtree-git-plugin'
 
-" Themes
-Plug 'morhetz/gruvbox'
-Plug 'shinchu/lightline-gruvbox.vim'
-Plug 'ryanoasis/vim-devicons' 
+" Tmux
+Plugin 'benmills/vimux'
 
-" Tree
-Plug 'scrooloose/nerdtree'
+" Addons
+Plugin 'scrooloose/nerdtree'
+Plugin 'tibabit/vim-templates'
+Plugin 'tpope/vim-surround'
+Plugin 'jiangmiao/auto-pairs'
+Plugin 'psliwka/vim-smoothie'
+Plugin 'tani/ddc-fuzzy'
+Plugin 'matsui54/denops-popup-preview.vim'
+Plugin 'statiolake/ddc-ale'
+Plugin 'SirVer/ultisnips'
+Plugin 'honza/vim-snippets'
+Plugin 'Shougo/pum.vim'
 
-" Typing
-Plug 'jiangmiao/auto-pairs'
-Plug 'alvan/vim-closetag'
-Plug 'tpope/vim-surround'
+" IDE like plugins
+Plugin 'dense-analysis/ale'
+Plugin 'Shougo/ddc-around'
+Plugin 'Shougo/ddc-matcher_head'
+Plugin 'Shougo/ddc-sorter_rank'
+Plugin 'vim-denops/denops.vim'
+Plugin 'Shougo/ddc.vim'
+Plugin 'preservim/nerdcommenter'
+Plugin 'Yggdroot/indentLine'
+Plugin 'mattn/emmet-vim'
+Plugin 'preservim/tagbar'
 
-" Autocomplete
-Plug 'sirver/ultisnips'
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
+" This is a test surround
 
-" tmux
-Plug 'benmills/vimux'
-Plug 'christoomey/vim-tmux-navigator'
+" Git
+Plugin 'tpope/vim-fugitive'
+Plugin 'mhinz/vim-signify'
+Plugin 'airblade/vim-gitgutter'
 
-" IDE
-Plug 'editorconfig/editorconfig-vim'
-Plug 'Yggdroot/indentLine'
-Plug 'scrooloose/nerdcommenter'
-Plug 'autozimu/LanguageClient-neovim', {
-			\ 'branch': 'next',
-			\ 'do': 'bash install.sh'
-			\ }
-
-" git
-Plug 'tpope/vim-fugitive'
-
-Plug 'tpope/vim-repeat'
-
-call plug#end()
+" Other
+Plugin 'mhinz/vim-startify'
+Plugin 'editorconfig/editorconfig-vim'
+call vundle#end()
