@@ -12,36 +12,52 @@ nnoremap <Leader>q :q<CR>
 " shorter commands
 cnoreabbrev tree NERDTreeToggle
 cnoreabbrev diff Gdiff
+cnoreabbrev fzf FZF
 
-"Remap keys for gotos
-nmap <silent> gd <Plug>(coc-definitions)
-nmap <silent> gy <Plug>(coc-type-definitions)
-nmap <silent> gi <Plug>(coc-implementation)
-nmap <silent> gr <Plug>(coc-references)
+" Tagbar key maps
+nmap <F6> :TagbarToggle<CR>
+
+" fuzzy finder maps
+nnoremap <F5> :FZF<CR>
+
+" IDE like mapping
+inoremap <silent> <C-Space> <C-\><C-O>:ALEComplete<CR>
+imap <C-Space> <Plug>(ale_complete)
+" Remap keys for gotos
+" nmap <silent> gd <Plug>(coc-definitions)
+" nmap <silent> gy <Plug>(coc-type-definitions)
+" nmap <silent> gi <Plug>(coc-implementation)
+" nmap <silent> gr <Plug>(coc-references)
 
 " Maps for completition
-if has("nvim")
-	inoremap <silent><expr><c-space> coc#refresh()
-else
-	inoremap <silent><expr> <c-@> coc#refresh()
-endif
-autocmd CursorHold * silent call CocActionAsync('highlight')
+" if has("nvim")
+" 	inoremap <silent><expr><c-space> coc#refresh()
+" else
+" 	inoremap <silent><expr> <c-@> coc#refresh()
+" endif
+" autocmd CursorHold * silent call CocActionAsync('highlight')
+"
 " Symbol renaming
-nmap <leader>rn <Plug>(coc-rename)
+nmap <leader>rn <Plug>(ale_rename)
+xmap <Leader>r <Plug>(ale_rename)
 
 " formatting
-xmap <leader>f <Plug>(coc-format-selected)
-nmap <leader>f <Plug>(coc-format-selected)
+xmap <Leader>f :ALEFix<CR>
+nmap <Leader>f :ALEFix<CR>
 
 " Remap for Language Client plugin
-nnoremap <F5> :call LanguageClient_contextMenu()<CR>
-map <Leader>lk :call LanguageClient#textDocument_hover()<CR>
-map <Leader>lg :call LanguageClient#textDocument_definition)<CR>
-map <Leader>lf :call LanguageClient#textDocument_formatting()<CR>
+" nnoremap <F5> :call LanguageClient_contextMenu()<CR>
+" map <Leader>lk :call LanguageClient#textDocument_hover()<CR>
+" map <Leader>lg :call LanguageClient#textDocument_definition)<CR>
+" map <Leader>lf :call LanguageClient#textDocument_formatting()<CR>
 
 " Special character insertion
 inoremap <C-~>  ` `<CR>
 
+" NERDTree toggle map
+map <silent> <Leader>t :NERDTreeToggle<CR>
+
+" ============================ [ SPECIAL FUNCTIONS/MAPS ] ============================
 set splitright
 function! OpenTerminal()
 	" move to right most buffer

@@ -7,6 +7,8 @@ Plugin 'junegunn/fzf'
 Plugin 'neovimhaskell/haskell-vim'
 Plugin 'posva/vim-vue'
 Plugin 'cespare/vim-toml'
+Plugin 'sheerun/vim-polyglot'
+Plugin 'octol/vim-cpp-enhanced-highlight'
 
 " Vundle manage Vundle
 Plugin 'VundleVim/Vundle.vim'
