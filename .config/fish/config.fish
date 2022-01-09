@@ -70,7 +70,7 @@ alias rankpkg="sudo sh -c 'rankmirrors -n 30 /etc/pacman.d/mirrorlist.pacnew > /
 alias ipac="sudo pacman -S"
 
 ### Custom Path additions
-set -x PATH $PATH "$HOME/.cabal/bin" "$HOME/.ghcup/bin"
+set -x PATH $PATH "$HOME/.cabal/bin" "$HOME/.ghcup/bin" "$HOME/.stack/bin"
 
 ## Proton especific Variables
 set -x STEAM_COMPAT_DATA_PATH ~/.proton
