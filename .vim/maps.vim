@@ -21,8 +21,16 @@ nmap <F6> :TagbarToggle<CR>
 nnoremap <F5> :FZF<CR>
 
 " IDE like mapping
+nnoremap <Tab> >>_
+nnoremap <S-Tab> <<_
+inoremap <S-Tab> <C-D>
+vnoremap <Tab> >gv
+vnoremap <S-Tab> <gv
+
 inoremap <silent> <C-Space> <C-\><C-O>:ALEComplete<CR>
 imap <C-Space> <Plug>(ale_complete)
+" inoremap <Leader>d :t.<CR>
+nnoremap <Leader>d :t.<CR>
 " Remap keys for gotos
 " nmap <silent> gd <Plug>(coc-definitions)
 " nmap <silent> gy <Plug>(coc-type-definitions)

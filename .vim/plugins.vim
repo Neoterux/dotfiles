@@ -7,8 +7,11 @@ Plugin 'junegunn/fzf'
 Plugin 'neovimhaskell/haskell-vim'
 Plugin 'posva/vim-vue'
 Plugin 'cespare/vim-toml'
-Plugin 'sheerun/vim-polyglot'
-Plugin 'octol/vim-cpp-enhanced-highlight'
+" Plugin 'sheerun/vim-polyglot'
+"Plugin 'octol/vim-cpp-enhanced-highlight'
+Plugin 'jackguo380/vim-lsp-cxx-highlight'
+Plugin 'shirk/vim-gas'
+" Plugin 'jeaye/color_coded'
 
 " Vundle manage Vundle
 Plugin 'VundleVim/Vundle.vim'
@@ -41,6 +44,7 @@ Plugin 'Shougo/pum.vim'
 Plugin 'dense-analysis/ale'
 Plugin 'Shougo/ddc-around'
 Plugin 'Shougo/ddc-matcher_head'
+Plugin 'matsui54/ddc-buffer'
 Plugin 'Shougo/ddc-sorter_rank'
 Plugin 'vim-denops/denops.vim'
 Plugin 'Shougo/ddc.vim'
@@ -48,6 +52,11 @@ Plugin 'preservim/nerdcommenter'
 Plugin 'Yggdroot/indentLine'
 Plugin 'mattn/emmet-vim'
 Plugin 'preservim/tagbar'
+if has('nvim')
+    Plugin 'neovim/nvim-lsp'
+    Plugin 'neovim/nvim-lspconfig'
+
+endif
 
 " This is a test surround
 
@@ -60,3 +69,9 @@ Plugin 'airblade/vim-gitgutter'
 Plugin 'mhinz/vim-startify'
 Plugin 'editorconfig/editorconfig-vim'
 call vundle#end()
+
+lua << EOF
+require'nvim_lsp'.ccls.setup{
+
+}
+EOF
