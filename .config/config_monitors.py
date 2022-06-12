@@ -13,7 +13,12 @@ monitor_list = {
     'HDMI-A-1': {
         'mode': '1920x1080',
         'rate': 144
-    }
+    },
+    'DisplayPort-0': {
+        'left-of': 'HDMI-A-1',
+        'rotate': 'left',
+        'mode': '1920x1080_60.00'
+    },
 }
 
 

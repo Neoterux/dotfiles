@@ -56,23 +56,35 @@ alias parui "paru -S"
 #set -q GHCUP_INSTALL_BASE_PREFIX[1]; or set GHCUP_INSTALL_BASE_PREFIX $HOME
 #test -f /home/neoterux/.ghcup/env ; and set -gx PATH $HOME/.cabal/bin /home/neoterux/.ghcup/bin $PATH
 
-neofetch
+# neofetch
 
 #### C/C++ Flags
-set -x CFLAGS "-march=znver1 -mtune=znver1 -O2 -pipe -ftree-vectorize -Wall"
+set -x CFLAGS "-march=znver3 -mtune=znver3 -O2 -pipe -ftree-vectorize -Wall"
 set -x CXXFLAGS "$CFLAGS"
-# set -x CPPFLAGS "$CFLAGS"
 
 ### ALIASES
 alias ghcd="ghc -dynamic "
 alias ssh="kitty +kitten ssh"
 alias rankpkg="sudo sh -c 'rankmirrors -n 30 /etc/pacman.d/mirrorlist.pacnew > /etc/pacman.d/mirrorlist'"
 alias ipac="sudo pacman -S"
+alias qmk="CFLAGS='' CXXFLAGS='' LDFLAGS='' ~/.local/bin/qmk"
 
 ### Custom Path additions
-set -x PATH $PATH "$HOME/.cabal/bin" "$HOME/.ghcup/bin" "$HOME/.stack/bin"
+set -x PATH $PATH "$HOME/.cabal/bin" "$HOME/.ghcup/bin" "$HOME/.stack/bin" "$HOME/.local/bin" "/lib/jvm/default/bin" "~/.local/share/gem/ruby/3.0.0/bin"
 
 ## Proton especific Variables
 set -x STEAM_COMPAT_DATA_PATH ~/.proton
 set -x STEAM_COMPAT_CLIENT_INSTALL_PATH ~/.local/share/Steam
 alias proton="~/.steam/steam/steamapps/common/Proton\ -\ Experimental/proton"
+alias icat="kitty +kitten icat"
+
+
+
+#### Environment variables
+set -x PKG_CONFIG_PATH $PKG_CONFIG_PATH "/usr/lib/pkgconfig" "/usr/share/pkgconfig"
+
+### Keyring [GNOME]
+#if test -n "$DESKTOP_SESSION"
+#    set -x (gnome-keyring-daemon --start | string split "=")
+#end
+set -x GCM_CREDENTIAL_STORE secretservice
