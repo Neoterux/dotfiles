@@ -3,10 +3,12 @@
 local au = require('au')
 local let = vim.g -- Equals to let g:
 local fn = vim.fn
-let.startify_custom_header = fn['startify#pad'](fn.split(fn.system([[figlet -w 100 Welcome Neoterux!]]), '\n'))
+local system = fn.system
+let.startify_custom_header = fn['startify#pad'](fn.split(system([[/usr/bin/figlet -w 100 Welcome Neoterux!]]), '\n'))
 
 
 -- lspkind configuration {{{
+--[[
 require('lspkind').init({
     -- enable text annotations
     with_text = true,
@@ -42,6 +44,11 @@ require('lspkind').init({
       TypeParameter = ""
     },
 })
+--]]
+-- }}}
+
+-- : Feline.nvim Configuration {{{
+require('feline').setup()
 -- }}}
 
 --: Gruvbox settings {{{
