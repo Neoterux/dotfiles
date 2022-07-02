@@ -1,10 +1,16 @@
 configuration {
-  font: "Source Sans Pro 12";
+  font: "FiraCode Nerd Font 12";
+  modi: "run,window,windowcd,drun";
+  combi-modi: "run,window,windowcd,run";
   show-icons: true;
-  display-window: "Window";
-  display-drun: "Search";
+  width: 900px;
+  border-color: #2e343f;
+  display-window: "裡 Window";
+  display-drun: " ";
+  display-run: "  ";
+  icon-theme: "Papirus";
+  drun-display-format: "{name} [<span weight='light' size='small'><i>({generic})</i></span>]";
+  run-command: "bash -c \"{cmd}\";
 }
 
-listview {
-    lines: 12;
-}
+@theme "slate"

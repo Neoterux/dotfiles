@@ -2,7 +2,17 @@ color=#f3f4f5
 separator_block_width=15
 markup=none
 
-#[volume-pulseaudio]
+[volume-pulseaudio]
+full_text=🔇:  0% 
+command=scripts=sound_info.sh
+interval=0
+signal=1
+
+[cpu]
+full_text = CPU: 0.00% @ +00.0°C
+command=scripts/cpu_info.sh
+interval=repeat
+color=#00B4EB
 
 # Query my default IP address only on startup
 [ip]
@@ -19,5 +29,5 @@ command=scripts/battery.sh
 interval=10
 
 [time]
-command=date +%T
+command=date '+%d-%m-%Y %H:%M:%S'
 interval=5
