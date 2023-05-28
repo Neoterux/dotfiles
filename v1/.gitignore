@@ -3,4 +3,6 @@
 ######################################
 nvim/site
 nvim/mason
+nvim/lazy
 
+.netrwhist
