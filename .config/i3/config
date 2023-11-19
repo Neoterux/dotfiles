@@ -43,7 +43,7 @@ bindsym $mod+Shift+c    kill
 bindsym $mod+Return     exec --no-startup-id $term
 bindsym Ctrl+Mod1+t     exec --no-startup-id $term
 bindsym $mod+Tab        exec --no-startup-id rofi -show window
-bindsym $mod+p          exec --no-startup-id rofi -show
+bindsym $mod+p          exec --no-startup-id rofi -show drun
 bindsym $mod+Shift+r    restart
 bindsym $mod+Shift+q    reload
 # Volume
@@ -96,7 +96,7 @@ bindsym $mod+w layout tabbed
 bindsym $mod+e layout toggle split
 
 # toggle tiling / floating
-bindsym $mod+Shift+space floating toggle
+bindsym $mod+t floating toggle
 
 # change focus between tiling / floating windows
 bindsym $mod+space focus mode_toggle
@@ -232,17 +232,18 @@ gaps outer 5
 #################################
 #    AutoStart applications     #
 #################################
-exec_always --no-startup-id xautolock -time 10 -locker "i3lock -f Source-Sans-Pro"
+#exec_always --no-startup-id xautolock -time 10 -locker "i3lock -f Source-Sans-Pro"
 exec_always --no-startup-id nm-applet
-exec_always --no-startup-id feh --bg-fill ~/Pictures/background.webp
+#exec_always --no-startup-id feh --bg-fill ~/Pictures/background.webp
+exec_always --no-startup-id feh --bg-fill ~/Pictures/background.png
 exec_always --no-startup-id picom --experimental-backends
-exec_always --no-startup-id redshift -P -O 4500
+#exec_always --no-startup-id redshift -P -O 4500
 exec_always --no-startup-id $HOME/.config/polybar/launch.sh
 # Start XDG autostart .desktop files using dex. See also
 # https://wiki.archlinux.org/index.php/XDG_Autostart
-exec --no-startup-id dex --autostart --environment i3
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
+#exec --no-startup-id dex --autostart --environment i3
+#exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.
-exec --no-startup-id nm-applet
+#exec --no-startup-id nm-applet
