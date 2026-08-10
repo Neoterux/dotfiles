@@ -18,6 +18,10 @@ QtObject {
     readonly property color workspaceBorder: "#fbf1c7"
     readonly property color workspaceActiveBg: "#fbf1c7"
     readonly property color workspaceActiveFg: "#fe8019"
+    // Mismo tono que workspaceActiveBg pero translucido, para teñir TODO
+    // el contenedor de workspaces (no cada pill individual) con "algo del
+    // color del workspace activo" sin volverse un bloque solido opaco.
+    readonly property color workspaceActiveBgTranslucent: Qt.rgba(workspaceActiveBg.r, workspaceActiveBg.g, workspaceActiveBg.b, 0.28)
 
     readonly property color launcher: "#161320"
     readonly property color launcherFg: "#fe8019"
