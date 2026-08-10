@@ -1,0 +1,73 @@
+import QtQuick
+import QtQuick.Effects
+import QtQuick.Layouts
+import "../../theme"
+import "../tray"
+
+// Layout general de la barra: izquierda / centro / derecha. Todos los
+// componentes de esta carpeta viven en la misma carpeta, asi que QML los
+// resuelve sin necesidad de un import extra; la bandeja del sistema vive
+// aparte (../tray) porque es su propio subsistema.
+Item {
+    id: root
+
+    // Factor de escala para toda la barra de este monitor. shell.qml le
+    // pasa un valor distinto a cada PanelWindow segun el monitor.
+    property real uiScale: 1.0
+    // PanelWindow dueña de esta barra: los modulos con dropdown (Clock,
+    // Volume) la necesitan para poder anclarse correctamente.
+    required property var panelWindow
+
+    // Fondo de la barra: a todo el ancho, sin borde ni esquinas
+    // redondeadas (antes era un pill flotante centrado; ahora ocupa todo
+    // el espacio, pegado a los bordes de la pantalla).
+    Rectangle {
+        id: barBg
+        anchors.fill: parent
+        color: Colors.bgTranslucent
+        opacity: 0.95
+    }
+
+    MultiEffect {
+        anchors.fill: barBg
+        source: barBg
+        z: barBg.z - 1
+        shadowEnabled: true
+        shadowColor: "#66000000"
+        shadowBlur: 0.5
+        shadowVerticalOffset: 2
+        blurMax: 16
+    }
+
+    RowLayout {
+        anchors.left: parent.left
+        anchors.leftMargin: 14 * root.uiScale
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 8 * root.uiScale
+
+        Launcher { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        Backlight { uiScale: root.uiScale }
+        Volume { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        Workspaces { uiScale: root.uiScale }
+    }
+
+    Clock {
+        uiScale: root.uiScale
+        panelWindow: root.panelWindow
+        anchors.centerIn: parent
+    }
+
+    RowLayout {
+        anchors.right: parent.right
+        anchors.rightMargin: 14 * root.uiScale
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 4 * root.uiScale
+
+        SystemTrayRow { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        NetworkStatus { uiScale: root.uiScale }
+        BluetoothButton { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        Terminal { uiScale: root.uiScale }
+        Processes { uiScale: root.uiScale }
+        PowerMenu { uiScale: root.uiScale; panelWindow: root.panelWindow }
+    }
+}
