@@ -13,10 +13,11 @@ ColumnLayout {
     property real uiScale: 1.0
 
     readonly property var tabs: [
-        { name: "Dashboard", icon: "" },
-        { name: "Media", icon: "" },
-        { name: "Performance", icon: "" },
-        { name: "Workspaces", icon: "" },
+        { name: "Dashboard", icon: "" },
+        { name: "Media", icon: "" },
+        { name: "Performance", icon: "" },
+        { name: "Workspaces", icon: "" },
+        { name: "Servers", icon: "" },
     ]
     property int currentTab: 0
 
@@ -104,7 +105,7 @@ ColumnLayout {
 
         Loader {
             id: pageLoader
-            sourceComponent: [dashboardPage, mediaPage, performancePage, workspacesPage][root.currentTab]
+            sourceComponent: [dashboardPage, mediaPage, performancePage, workspacesPage, serversPage][root.currentTab]
 
             opacity: 0
             Component.onCompleted: opacity = 1
@@ -142,5 +143,10 @@ ColumnLayout {
     Component {
         id: workspacesPage
         WorkspacesTab { uiScale: root.uiScale }
+    }
+
+    Component {
+        id: serversPage
+        ServersTab { uiScale: root.uiScale }
     }
 }

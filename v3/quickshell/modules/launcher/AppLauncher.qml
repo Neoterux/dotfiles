@@ -50,7 +50,7 @@ ColumnLayout {
             spacing: 10 * root.uiScale
 
             Text {
-                text: "" // nf-fa-search
+                text: "" // nf-fa-search
                 color: Colors.fg
                 opacity: 0.6
                 font.family: Colors.fontFamily

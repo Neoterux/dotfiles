@@ -88,7 +88,7 @@ ColumnLayout {
         Layout.fillWidth: true
 
         Text {
-            text: ""
+            text: "" // nf-fa-chevron_left
             color: Colors.fg
             font.family: Colors.fontFamily
             font.pixelSize: 15 * root.uiScale
@@ -112,7 +112,7 @@ ColumnLayout {
         }
 
         Text {
-            text: ""
+            text: "" // nf-fa-chevron_right
             color: Colors.fg
             font.family: Colors.fontFamily
             font.pixelSize: 15 * root.uiScale

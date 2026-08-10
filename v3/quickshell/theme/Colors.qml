@@ -32,4 +32,11 @@ QtObject {
     readonly property color clock: "#8ec07c"
     readonly property color memory: "#fabd2f"
     readonly property color cpu: "#b8bb26"
+
+    // Estados de servidor para la tab "Servers" del dashboard (ver
+    // dashboard/ServersTab.qml). Mismos tonos gruvbox que el resto.
+    readonly property color statusUp: "#b8bb26"
+    readonly property color statusDegraded: "#fabd2f"
+    readonly property color statusDown: "#fb4934"
+    readonly property color statusUnknown: "#7c6f64"
 }

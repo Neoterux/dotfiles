@@ -71,7 +71,7 @@ RowLayout {
         RowLayout {
             spacing: 8 * root.uiScale
             Text {
-                text: ""
+                text: "" // nf-fa-linux
                 color: Colors.accent
                 font.family: Colors.fontFamily
                 font.pixelSize: 13 * root.uiScale
@@ -89,7 +89,7 @@ RowLayout {
         RowLayout {
             spacing: 8 * root.uiScale
             Text {
-                text: ""
+                text: "" // nf-fa-desktop
                 color: Colors.accent
                 font.family: Colors.fontFamily
                 font.pixelSize: 13 * root.uiScale
@@ -105,7 +105,7 @@ RowLayout {
         RowLayout {
             spacing: 8 * root.uiScale
             Text {
-                text: ""
+                text: "" // nf-fa-clock_o
                 color: Colors.accent
                 font.family: Colors.fontFamily
                 font.pixelSize: 13 * root.uiScale

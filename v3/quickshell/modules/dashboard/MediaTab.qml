@@ -22,7 +22,7 @@ Item {
         spacing: 10 * root.uiScale
 
         Text {
-            text: ""
+            text: "" // nf-fa-music
             color: Colors.fg
             opacity: 0.5
             font.family: Colors.fontFamily
@@ -65,7 +65,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     visible: !root.player || root.player.trackArtUrl === ""
-                    text: ""
+                    text: "" // nf-fa-music
                     color: Colors.fg
                     opacity: 0.5
                     font.family: Colors.fontFamily
@@ -129,7 +129,7 @@ Item {
             spacing: 24 * root.uiScale
 
             Text {
-                text: ""
+                text: "" // nf-fa-step_backward
                 color: Colors.fg
                 font.family: Colors.fontFamily
                 font.pixelSize: 16 * root.uiScale
@@ -145,7 +145,7 @@ Item {
             }
 
             Text {
-                text: (root.player && root.player.isPlaying) ? "" : ""
+                text: (root.player && root.player.isPlaying) ? "" : "" // nf-fa-pause / nf-fa-play
                 color: Colors.fg
                 font.family: Colors.fontFamily
                 font.pixelSize: 19 * root.uiScale
@@ -160,7 +160,7 @@ Item {
             }
 
             Text {
-                text: ""
+                text: "" // nf-fa-step_forward
                 color: Colors.fg
                 font.family: Colors.fontFamily
                 font.pixelSize: 16 * root.uiScale
