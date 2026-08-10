@@ -57,17 +57,38 @@ Item {
         anchors.centerIn: parent
     }
 
-    RowLayout {
+    // Antes estos flotaban directo sobre el fondo de la barra, sueltos.
+    // Un solo contenedor glass (mismo estilo que el resto de la barra:
+    // Colors.bgTranslucent + esquinas redondeadas) los agrupa como una
+    // unidad visual, igual que Workspaces.qml ya hace con su propio pill.
+    Rectangle {
+        id: rightContainer
         anchors.right: parent.right
-        anchors.rightMargin: 14 * root.uiScale
+        anchors.rightMargin: 10 * root.uiScale
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 4 * root.uiScale
+        implicitWidth: rightRow.implicitWidth + hPad * 2
+        implicitHeight: rightRow.implicitHeight + vPad * 2
+        radius: 10 * root.uiScale
+        color: Colors.bgTranslucent
 
-        SystemTrayRow { uiScale: root.uiScale; panelWindow: root.panelWindow }
-        NetworkStatus { uiScale: root.uiScale }
-        BluetoothButton { uiScale: root.uiScale; panelWindow: root.panelWindow }
-        Terminal { uiScale: root.uiScale }
-        Processes { uiScale: root.uiScale }
-        PowerMenu { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        readonly property real hPad: 8 * root.uiScale
+        // Vertical bien chico: el contenido (IconButton, 26*uiScale) ya
+        // esta ajustado para entrar en el alto de la barra con poco
+        // margen -- si se agranda mucho se corta contra el borde de la
+        // superficie de la PanelWindow (mismo limite que IconButton.qml).
+        readonly property real vPad: 1 * root.uiScale
+
+        RowLayout {
+            id: rightRow
+            anchors.centerIn: parent
+            spacing: 2 * root.uiScale
+
+            SystemTrayRow { uiScale: root.uiScale; panelWindow: root.panelWindow }
+            NetworkStatus { uiScale: root.uiScale }
+            BluetoothButton { uiScale: root.uiScale; panelWindow: root.panelWindow }
+            Terminal { uiScale: root.uiScale }
+            Processes { uiScale: root.uiScale }
+            PowerMenu { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        }
     }
 }

@@ -15,7 +15,9 @@ IconButton {
     readonly property bool btEnabled: available && adapter.enabled
 
     visible: available
-    icon: btEnabled ? "" : "" // nf-fa-bluetooth_b
+    // Un solo icono para ambos estados -- el color (`active`) ya
+    // distingue encendido/apagado, no hace falta un segundo glifo.
+    icon: "" // nf-fa-bluetooth_b
     active: btEnabled
     fontScale: 1.15
 

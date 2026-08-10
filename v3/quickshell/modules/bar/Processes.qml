@@ -3,7 +3,7 @@ import Quickshell.Io
 // Procesos: abre btop en una terminal.
 IconButton {
     id: root
-    icon: "" // nf-fa-tasks
+    icon: "" // nf-fa-tasks
 
     Process {
         id: proc
