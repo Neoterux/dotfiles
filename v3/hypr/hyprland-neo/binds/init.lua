@@ -45,9 +45,16 @@ function M.setup()
         hl.bind(mainMod .. moveAction .. key, hl.dsp.window.move({ workspace = i }))
     end
 
-    -- Example special workspace (scratchpad)
-    hl.bind(mainMod .. focusAction .."S", hl.dsp.exec_cmd("hyprshot region --clipboard-only -m region"))
-    hl.bind(mainMod .. moveAction .. "S", hl.dsp.exec_cmd([[hyprshot --raw -m region | satty -f -]]))
+    -- Capturas de pantalla. `--freeze` congela la imagen (via hyprpicker)
+    -- mientras se selecciona la region: sin eso, todo lo que se mueva
+    -- durante el arrastre -- un video, un menu que se cierra, el reloj de la
+    -- barra -- termina distinto en la captura de lo que se estaba viendo al
+    -- momento de decidir el recorte.
+    --   sin SHIFT-equivalente: al portapapeles y listo.
+    --   con SHIFT-equivalente: se abre en satty para anotar (ver la regla
+    --   "satty-modal" en workspaces/init.lua).
+    hl.bind(mainMod .. focusAction .. "S", hl.dsp.exec_cmd("hyprshot --freeze --clipboard-only -m region"))
+    hl.bind(mainMod .. moveAction .. "S", hl.dsp.exec_cmd([[hyprshot --freeze --raw -m region | satty -f -]]))
 
     -- Move/resize windows with mainMod + LMB/RMB and dragging
     hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })

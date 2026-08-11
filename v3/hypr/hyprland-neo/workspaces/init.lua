@@ -52,6 +52,29 @@ function M.setup()
         float = true,
     })
 
+    -- Satty (el anotador de capturas que abre el bind de screenshot con
+    -- `hyprshot --freeze --raw -m region | satty -f -`). Es un editor efimero de un
+    -- solo uso: tilearlo reacomoda todo el workspace justo cuando uno solo
+    -- queria marcar algo y cerrar, asi que se trata como un modal.
+    -- El class real es el app_id de Wayland, "com.gabm.satty" (coincide con
+    -- el StartupWMClass de su .desktop).
+    hl.window_rule({
+        name = "satty-modal",
+        match = { class = "^(com\\.gabm\\.satty)$" },
+        float = true,
+        center = true,
+        -- OJO: el API Lua de reglas NO parsea porcentajes ("75% 80%" se
+        -- ignora en silencio, verificado en vivo), pero si evalua expresiones
+        -- con las variables monitor_w/monitor_h. Asi la ventana queda
+        -- relativa al monitor donde abra y no hay resoluciones hardcodeadas.
+        size = "monitor_w*0.75 monitor_h*0.8",
+        -- Oscurecer lo de atras refuerza el caracter modal y evita que el
+        -- escritorio compita con la captura mientras se dibuja encima
+        -- (solo aplica mientras satty tiene el foco, que es justo cuando
+        -- estorba el fondo).
+        dim_around = true,
+    })
+
     hl.window_rule({
         name = "no-initial-focus-xwayland",
         match = { xwayland = true },
