@@ -46,8 +46,8 @@ function M.setup()
     end
 
     -- Example special workspace (scratchpad)
-    hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("hyprshot region --clipboard-only -m region"))
-    hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd([[hyprshot --raw -m region | satty -f -]]))
+    hl.bind(mainMod .. focusAction .."S", hl.dsp.exec_cmd("hyprshot region --clipboard-only -m region"))
+    hl.bind(mainMod .. moveAction .. "S", hl.dsp.exec_cmd([[hyprshot --raw -m region | satty -f -]]))
 
     -- Move/resize windows with mainMod + LMB/RMB and dragging
     hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
