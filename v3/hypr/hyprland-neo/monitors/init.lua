@@ -1,24 +1,22 @@
+-- Layout de monitores y workspaces iniciales.
+--
+-- Esto NO se hardcodea aca: cada maquina describe sus outputs y su workspace
+-- inicial en `hyprland-neo/machines/<hostname>.json`. Ver machines/README.md.
+
+local machine = require('hyprland-neo/lib/machine')
+
 local M = {}
 
 function M.setup()
-    hl.monitor({
-        output = "DP-1",
-        mode = "2560x1440@180",
-        position = "0x0",
-        scale = 1,
-    })
+    local profile = machine.get()
 
-    hl.monitor({
-        output = "DP-3",
-        mode = "1920x1080@144",
-        position = "auto-left",
-        scale = 1,
-    })
+    for _, spec in ipairs(profile.monitors) do
+        hl.monitor(spec)
+    end
 
-    hl.workspace_rule({
-        workspace = "1",
-        monitor = "DP-1",
-    })
+    for _, rule in ipairs(profile.workspace_rules) do
+        hl.workspace_rule(rule)
+    end
 end
 
 return M

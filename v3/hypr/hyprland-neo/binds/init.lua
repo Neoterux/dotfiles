@@ -1,3 +1,5 @@
+local machine = require('hyprland-neo/lib/machine')
+
 local M = {}
 
 local mainMod = "SUPER" -- Windows Key como principal
@@ -25,12 +27,22 @@ function M.setup()
         [[cliphist list | wofi --dmenu --pre-display-cmd "echo '%s' | cut -f 2" | cliphist decode | wl-copy]]
     ))
 
-    -- Switch workspaces with mainMod + [0-9]
-    -- Move active window to a workspace with mainMod + SHIFT + [0-9]
+    -- Navegacion de workspaces por numero.
+    --
+    -- El esquema se invierte segun el teclado de la maquina (lo define
+    -- `keyboard.layout` en machines/<hostname>.json):
+    --   standard -- SUPER + N cambia de workspace, SUPER + SHIFT + N manda la
+    --               ventana activa ahi (el clasico).
+    --   split    -- invertido, para el corne: los numeros ya estan en una capa
+    --               accedida con el pulgar, asi que el gesto sin SHIFT queda
+    --               para mover ventanas y el foco se pide con SHIFT.
+    local isUsingSplitKeyboard = machine.get().keyboard.is_split
+    local focusAction = isUsingSplitKeyboard and " + SHIFT + " or " + "
+    local moveAction = isUsingSplitKeyboard and " + " or " + SHIFT + "
     for i = 1, 10 do
         local key = i % 10 -- 10 maps to key 0
-        hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
-        hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+        hl.bind(mainMod .. focusAction .. key, hl.dsp.focus({ workspace = i }))
+        hl.bind(mainMod .. moveAction .. key, hl.dsp.window.move({ workspace = i }))
     end
 
     -- Example special workspace (scratchpad)

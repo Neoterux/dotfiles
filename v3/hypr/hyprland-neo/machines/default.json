@@ -1,0 +1,10 @@
+{
+  "name": "default",
+  "comment": "Perfil de respaldo para una maquina todavia sin archivo propio. Sin 'monitors', Hyprland autodetecta los outputs (modo preferido, en fila). Copia este archivo a <hostname>.json y completalo.",
+
+  "keyboard": {
+    "layout": "standard"
+  },
+
+  "monitors": []
+}
