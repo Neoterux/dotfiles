@@ -1,0 +1,5 @@
+# Ignorar archivos de Configuración de HyprLock y Hyprpaper
+## esto es por que estos archivos los uso por cada máquina en donde corro Hyprland
+## con su propia configuración mas que nada para controlar  quien es quien
+hyprlock.*
+hyprpaper.*
