@@ -43,8 +43,13 @@ Item {
         font.pixelSize: 13 * root.uiScale * root.fontScale
     }
 
+    // Contenedor para el contenido extra de cada instancia (p.ej. el
+    // IconImage de un item de la bandeja). Tiene que llenar el boton: sin
+    // esto queda 0x0 en la esquina y cualquier hijo con `centerIn: parent`
+    // se dibuja fuera de la superficie de la barra (invisible).
     Item {
         id: extra
+        anchors.fill: parent
     }
 
     MouseArea {

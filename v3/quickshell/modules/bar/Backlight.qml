@@ -21,7 +21,7 @@ Pill {
 
     Text {
         // nf-fa-lightbulb_o, mismo codepoint que "backlight" en waybar/config
-        text: " " + root.pct + "%"
+        text: "\u{f0eb} " + root.pct + "%"
         color: root.fg
         font.family: Colors.fontFamily
         font.pixelSize: root.fontPixelSize

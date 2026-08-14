@@ -13,14 +13,22 @@ IconButton {
     required property var trayItem
     required property var panelWindow
 
-    icon: ""
+    // Fallback visible solo si el icono del item no carga (algunas apps
+    // publican un nombre de icono que no existe en el tema): sin esto el
+    // item queda como un hueco clickeable invisible.
+    icon: img.status === Image.Ready ? "" : "" // nf-fa-circle_o
     implicitWidth: 26 * uiScale
     implicitHeight: 26 * uiScale
 
+    // `trayItem.icon` ya es una URL lista para usar (`image://icon/...` o
+    // `image://qsimage/...` cuando la app manda el pixmap por DBus en vez
+    // de un nombre de tema) -- pasarla por Quickshell.iconPath() devuelve
+    // vacio y el icono no se dibuja.
     IconImage {
+        id: img
         anchors.centerIn: parent
         implicitSize: 15 * root.uiScale
-        source: root.trayItem ? Quickshell.iconPath(root.trayItem.icon, true) : ""
+        source: root.trayItem ? root.trayItem.icon : ""
     }
 
     onLeftClicked: {

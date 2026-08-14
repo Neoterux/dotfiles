@@ -18,6 +18,14 @@ Item {
     // Volume) la necesitan para poder anclarse correctamente.
     required property var panelWindow
 
+    // Padding interno de los grupos de la derecha. El vertical es bien
+    // chico: el contenido (IconButton, 26*uiScale) ya esta ajustado para
+    // entrar en el alto de la barra con poco margen -- si el grupo se
+    // agranda mucho se corta contra el borde de la superficie de la
+    // PanelWindow (mismo limite que IconButton.qml).
+    readonly property real groupHPad: 8 * uiScale
+    readonly property real groupVPad: 1 * uiScale
+
     // Fondo de la barra: a todo el ancho, sin borde ni esquinas
     // redondeadas (antes era un pill flotante centrado; ahora ocupa todo
     // el espacio, pegado a los bordes de la pantalla).
@@ -57,38 +65,54 @@ Item {
         anchors.centerIn: parent
     }
 
-    // Antes estos flotaban directo sobre el fondo de la barra, sueltos.
-    // Un solo contenedor glass (mismo estilo que el resto de la barra:
-    // Colors.bgTranslucent + esquinas redondeadas) los agrupa como una
-    // unidad visual, igual que Workspaces.qml ya hace con su propio pill.
-    Rectangle {
-        id: rightContainer
+    // Derecha: DOS grupos separados, no uno solo -- los applets de la
+    // bandeja (apps de terceros, van y vienen) no son lo mismo que las
+    // herramientas fijas de la barra, y mezclarlos en un unico pill los
+    // hacia leer como una sola lista. El de la bandeja lleva el tinte del
+    // pill de Workspaces (con Colors.bgTranslucent era indistinguible del
+    // fondo de la barra).
+    RowLayout {
         anchors.right: parent.right
         anchors.rightMargin: 10 * root.uiScale
         anchors.verticalCenter: parent.verticalCenter
-        implicitWidth: rightRow.implicitWidth + hPad * 2
-        implicitHeight: rightRow.implicitHeight + vPad * 2
-        radius: 10 * root.uiScale
-        color: Colors.bgTranslucent
+        spacing: 8 * root.uiScale
 
-        readonly property real hPad: 8 * root.uiScale
-        // Vertical bien chico: el contenido (IconButton, 26*uiScale) ya
-        // esta ajustado para entrar en el alto de la barra con poco
-        // margen -- si se agranda mucho se corta contra el borde de la
-        // superficie de la PanelWindow (mismo limite que IconButton.qml).
-        readonly property real vPad: 1 * root.uiScale
+        Rectangle {
+            id: trayContainer
+            // Sin applets no hay nada que agrupar: un pill vacio flotando
+            // en la barra se ve como un bug.
+            visible: trayRow.implicitWidth > 0
+            Layout.preferredWidth: trayRow.implicitWidth + root.groupHPad * 2
+            Layout.preferredHeight: trayRow.implicitHeight + root.groupVPad * 2
+            radius: 10 * root.uiScale
+            color: Colors.workspaceActiveBgTranslucent
 
-        RowLayout {
-            id: rightRow
-            anchors.centerIn: parent
-            spacing: 2 * root.uiScale
+            SystemTrayRow {
+                id: trayRow
+                anchors.centerIn: parent
+                uiScale: root.uiScale
+                panelWindow: root.panelWindow
+            }
+        }
 
-            SystemTrayRow { uiScale: root.uiScale; panelWindow: root.panelWindow }
-            NetworkStatus { uiScale: root.uiScale }
-            BluetoothButton { uiScale: root.uiScale; panelWindow: root.panelWindow }
-            Terminal { uiScale: root.uiScale }
-            Processes { uiScale: root.uiScale }
-            PowerMenu { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        Rectangle {
+            id: toolsContainer
+            Layout.preferredWidth: toolsRow.implicitWidth + root.groupHPad * 2
+            Layout.preferredHeight: toolsRow.implicitHeight + root.groupVPad * 2
+            radius: 10 * root.uiScale
+            color: Colors.bgTranslucent
+
+            RowLayout {
+                id: toolsRow
+                anchors.centerIn: parent
+                spacing: 2 * root.uiScale
+
+                NetworkStatus { uiScale: root.uiScale }
+                BluetoothButton { uiScale: root.uiScale; panelWindow: root.panelWindow }
+                Terminal { uiScale: root.uiScale }
+                Processes { uiScale: root.uiScale }
+                PowerMenu { uiScale: root.uiScale; panelWindow: root.panelWindow }
+            }
         }
     }
 }

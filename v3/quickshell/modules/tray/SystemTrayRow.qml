@@ -12,7 +12,7 @@ RowLayout {
     property real uiScale: 1.0
     required property var panelWindow
 
-    spacing: 0
+    spacing: 2 * uiScale
 
     Repeater {
         model: SystemTray.items.values

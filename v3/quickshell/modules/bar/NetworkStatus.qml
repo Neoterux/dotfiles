@@ -13,7 +13,9 @@ IconButton {
     property bool online: false
     property string iface: ""
 
-    icon: online ? (iface.startsWith("wl") ? "\u{f1eb}" : "\u{f1e6}") : "\u{f092d}"
+    // Cableado: md-ethernet (el puerto RJ45), no fa-plug -- ese es un
+    // enchufe/conector generico y no se lee como "red por cable".
+    icon: online ? (iface.startsWith("wl") ? "\u{f1eb}" : "\u{f0200}") : "\u{f092d}"
     active: online
     fontScale: online && !iface.startsWith("wl") ? 1.05 : 1.15
 
