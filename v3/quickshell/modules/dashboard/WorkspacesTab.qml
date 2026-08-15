@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
+import Quickshell.Widgets
 import Quickshell.Hyprland
 import "../../theme"
 
@@ -19,11 +21,16 @@ GridLayout {
             id: wsCard
             required property var modelData
 
+            // Tinte de acento en el workspace enfocado -- mismo criterio
+            // visual que MetricCard (Performance) y los drawers de red/
+            // bluetooth, en vez del gris plano que tenia antes.
             Layout.preferredWidth: 200 * root.uiScale
             Layout.fillHeight: true
             Layout.minimumHeight: content.implicitHeight + 20 * root.uiScale
-            radius: 12 * root.uiScale
-            color: wsCard.modelData.focused ? Qt.lighter(Colors.bg, 1.8) : Qt.darker(Colors.bg, 0.6)
+            radius: 14 * root.uiScale
+            color: wsCard.modelData.focused ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.12) : Qt.darker(Colors.bg, 0.6)
+            border.width: wsCard.modelData.focused ? 1 : 0
+            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.35)
 
             MouseArea {
                 anchors.fill: parent
@@ -34,8 +41,8 @@ GridLayout {
             ColumnLayout {
                 id: content
                 anchors.fill: parent
-                anchors.margins: 10 * root.uiScale
-                spacing: 6 * root.uiScale
+                anchors.margins: 12 * root.uiScale
+                spacing: 8 * root.uiScale
 
                 RowLayout {
                     spacing: 8 * root.uiScale
@@ -50,7 +57,7 @@ GridLayout {
 
                     Text {
                         text: "Workspace " + wsCard.modelData.name
-                        color: Colors.fg
+                        color: wsCard.modelData.focused ? Colors.accent : Colors.fg
                         font.family: Colors.fontFamily
                         font.pixelSize: 13 * root.uiScale
                         font.bold: true
@@ -70,15 +77,44 @@ GridLayout {
                 Repeater {
                     model: wsCard.modelData.toplevels.values
 
-                    delegate: Text {
+                    delegate: RowLayout {
+                        id: winRow
                         required property var modelData
+                        // XWayland toplevels no siempre traen `.wayland`
+                        // poblado -- mismo guard que ya usa Workspaces.qml
+                        // (bar) para el icono de cada pill.
+                        readonly property string appId: winRow.modelData.wayland ? winRow.modelData.wayland.appId : ""
+
                         Layout.fillWidth: true
-                        text: "• " + (modelData.title || "(sin titulo)")
-                        color: Colors.fg
-                        opacity: 0.75
-                        font.family: Colors.fontFamily
-                        font.pixelSize: 12 * root.uiScale
-                        elide: Text.ElideRight
+                        spacing: 6 * root.uiScale
+
+                        IconImage {
+                            id: winIcon
+                            Layout.preferredWidth: 14 * root.uiScale
+                            Layout.preferredHeight: 14 * root.uiScale
+                            source: winRow.appId ? Quickshell.iconPath(winRow.appId) : ""
+                            visible: winRow.appId !== "" && status === Image.Ready
+                        }
+
+                        Text {
+                            visible: !winIcon.visible
+                            text: "•"
+                            color: Colors.fg
+                            opacity: 0.6
+                            font.family: Colors.fontFamily
+                            font.pixelSize: 12 * root.uiScale
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: 0
+                            text: winRow.modelData.title || "(sin titulo)"
+                            color: Colors.fg
+                            opacity: 0.75
+                            font.family: Colors.fontFamily
+                            font.pixelSize: 12 * root.uiScale
+                            elide: Text.ElideRight
+                        }
                     }
                 }
             }

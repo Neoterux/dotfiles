@@ -108,11 +108,19 @@ GridLayout {
             required property var modelData
             readonly property string status: ["up", "down", "degraded"].includes(card.modelData.status) ? card.modelData.status : "unknown"
 
+            readonly property color tint: root.statusColor(card.status)
+
             Layout.preferredWidth: 210 * root.uiScale
             Layout.fillHeight: true
             Layout.minimumHeight: content.implicitHeight + 18 * root.uiScale
             radius: 12 * root.uiScale
-            color: Qt.darker(Colors.bg, 0.6)
+            // Tinte del color de estado -- mismo criterio visual que
+            // MetricCard (Performance) y los workspaces enfocados, en vez
+            // del gris plano que tenia antes (el punto de color solo ya
+            // no alcanzaba para leer el estado de un vistazo).
+            color: Qt.rgba(card.tint.r, card.tint.g, card.tint.b, 0.1)
+            border.width: 1
+            border.color: Qt.rgba(card.tint.r, card.tint.g, card.tint.b, 0.3)
 
             ColumnLayout {
                 id: content

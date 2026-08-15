@@ -68,54 +68,22 @@ RowLayout {
             font.bold: true
         }
 
-        RowLayout {
-            spacing: 8 * root.uiScale
-            Text {
-                text: "" // nf-fa-linux
-                color: Colors.accent
-                font.family: Colors.fontFamily
-                font.pixelSize: 13 * root.uiScale
-            }
-            Text {
-                Layout.fillWidth: true
-                text: root.distro
-                color: Colors.fg
-                font.family: Colors.fontFamily
-                font.pixelSize: 12 * root.uiScale
-                elide: Text.ElideRight
-            }
+        DashboardInfoRow {
+            uiScale: root.uiScale
+            icon: "\u{f17c}" // nf-fa-linux
+            label: root.distro
         }
 
-        RowLayout {
-            spacing: 8 * root.uiScale
-            Text {
-                text: "" // nf-fa-desktop
-                color: Colors.accent
-                font.family: Colors.fontFamily
-                font.pixelSize: 13 * root.uiScale
-            }
-            Text {
-                text: "Hyprland"
-                color: Colors.fg
-                font.family: Colors.fontFamily
-                font.pixelSize: 12 * root.uiScale
-            }
+        DashboardInfoRow {
+            uiScale: root.uiScale
+            icon: "\u{f108}" // nf-fa-desktop
+            label: "Hyprland"
         }
 
-        RowLayout {
-            spacing: 8 * root.uiScale
-            Text {
-                text: "" // nf-fa-clock_o
-                color: Colors.accent
-                font.family: Colors.fontFamily
-                font.pixelSize: 13 * root.uiScale
-            }
-            Text {
-                text: "up " + root.uptimeText
-                color: Colors.fg
-                font.family: Colors.fontFamily
-                font.pixelSize: 12 * root.uiScale
-            }
+        DashboardInfoRow {
+            uiScale: root.uiScale
+            icon: "\u{f017}" // nf-fa-clock_o
+            label: "up " + root.uptimeText
         }
 
         Item {
