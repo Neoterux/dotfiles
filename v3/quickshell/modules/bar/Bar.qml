@@ -107,11 +107,47 @@ Item {
                 anchors.centerIn: parent
                 spacing: 2 * root.uiScale
 
-                NetworkStatus { uiScale: root.uiScale }
-                BluetoothButton { uiScale: root.uiScale; panelWindow: root.panelWindow }
+                NetworkStatus { id: networkStatus; uiScale: root.uiScale; panelWindow: root.panelWindow }
+                BluetoothButton { id: bluetoothButton; uiScale: root.uiScale; panelWindow: root.panelWindow }
                 Terminal { uiScale: root.uiScale }
                 Processes { uiScale: root.uiScale }
-                PowerMenu { uiScale: root.uiScale; panelWindow: root.panelWindow }
+                PowerMenu { id: powerMenu; uiScale: root.uiScale; panelWindow: root.panelWindow }
+            }
+        }
+    }
+
+    // Los tres botones de arriba con drawer (red, bluetooth, power) estan
+    // muy pegados entre si en la barra -- sin esto, abrir uno mientras otro
+    // ya esta abierto deja los dos popups superpuestos. Cada uno sigue
+    // dueño de su propio `expanded`; esto solo lo apaga desde afuera apenas
+    // otro se prende, no hace falta tocar NetworkStatus/BluetoothButton/
+    // PowerMenu para esto.
+    Connections {
+        target: networkStatus
+        function onExpandedChanged() {
+            if (networkStatus.expanded) {
+                bluetoothButton.expanded = false;
+                powerMenu.expanded = false;
+            }
+        }
+    }
+
+    Connections {
+        target: bluetoothButton
+        function onExpandedChanged() {
+            if (bluetoothButton.expanded) {
+                networkStatus.expanded = false;
+                powerMenu.expanded = false;
+            }
+        }
+    }
+
+    Connections {
+        target: powerMenu
+        function onExpandedChanged() {
+            if (powerMenu.expanded) {
+                networkStatus.expanded = false;
+                bluetoothButton.expanded = false;
             }
         }
     }
