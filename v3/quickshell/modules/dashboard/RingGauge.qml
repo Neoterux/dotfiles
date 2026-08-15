@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import "../../theme"
 
 // Anillo de progreso circular (Canvas, sin depender de QtQuick.Shapes)
@@ -8,15 +9,16 @@ Item {
     id: root
 
     property real uiScale: 1.0
-    implicitWidth: 100 * uiScale
-    implicitHeight: 100 * uiScale
+    property real size: 100
+    implicitWidth: size * uiScale
+    implicitHeight: size * uiScale
 
     property real value: 0 // 0..1
     property color ringColor: Colors.accent
     property color trackColor: Qt.darker(Colors.bg, 0.55)
     property string bigText: ""
     property string smallText: ""
-    property real lineWidth: 7 * uiScale
+    property real lineWidth: 8 * uiScale
 
     Canvas {
         id: canvas
@@ -49,6 +51,23 @@ Item {
         }
     }
 
+    // Brillo sutil detras del anillo, tenido del mismo color -- sin esto
+    // los anillos se leian planos/flotando sobre el fondo del drawer.
+    MultiEffect {
+        anchors.fill: canvas
+        source: canvas
+        z: canvas.z - 1
+        shadowEnabled: true
+        shadowColor: root.ringColor
+        shadowOpacity: 0.55
+        shadowBlur: 0.7
+        blurMax: 24
+    }
+
+    Behavior on value {
+        NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+    }
+
     onValueChanged: canvas.requestPaint()
     onRingColorChanged: canvas.requestPaint()
     onTrackColorChanged: canvas.requestPaint()
@@ -64,11 +83,12 @@ Item {
             text: root.bigText
             color: Colors.fg
             font.family: Colors.fontFamily
-            font.pixelSize: 17 * root.uiScale
+            font.pixelSize: 18 * root.uiScale
             font.bold: true
         }
 
         Text {
+            visible: root.smallText !== ""
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.smallText
             color: Colors.fg

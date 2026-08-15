@@ -142,35 +142,62 @@ RowLayout {
         }
     }
 
-    RingGauge {
+    MetricCard {
         uiScale: root.uiScale
-        value: root.gpuTempC / 100
-        ringColor: Colors.network
-        bigText: root.gpuTempPath ? (root.gpuTempC + "°C") : "—"
-        smallText: "GPU temp"
+        label: "GPU"
+        tint: Colors.network
+
+        RingGauge {
+            uiScale: root.uiScale
+            size: 106
+            value: root.gpuTempC / 100
+            ringColor: Colors.network
+            bigText: root.gpuTempPath ? (root.gpuTempC + "°C") : "—"
+        }
     }
 
-    RingGauge {
+    MetricCard {
         uiScale: root.uiScale
-        value: root.cpuUsage
-        ringColor: Colors.cpu
-        bigText: root.cpuTempPath ? (root.cpuTempC + "°C") : Math.round(root.cpuUsage * 100) + "%"
-        smallText: root.cpuTempPath ? ("CPU " + Math.round(root.cpuUsage * 100) + "%") : "CPU usage"
+        label: "CPU"
+        tint: Colors.cpu
+
+        RingGauge {
+            uiScale: root.uiScale
+            size: 106
+            value: root.cpuUsage
+            ringColor: Colors.cpu
+            bigText: root.cpuTempPath ? (root.cpuTempC + "°C") : Math.round(root.cpuUsage * 100) + "%"
+            smallText: root.cpuTempPath ? (Math.round(root.cpuUsage * 100) + "% uso") : ""
+        }
     }
 
-    RingGauge {
+    MetricCard {
         uiScale: root.uiScale
-        value: root.memUsage
-        ringColor: Colors.memory
-        bigText: root.memUsedText
-        smallText: "de " + root.memTotalText
+        label: "RAM"
+        tint: Colors.memory
+
+        RingGauge {
+            uiScale: root.uiScale
+            size: 106
+            value: root.memUsage
+            ringColor: Colors.memory
+            bigText: root.memUsedText
+            smallText: "de " + root.memTotalText
+        }
     }
 
-    RingGauge {
+    MetricCard {
         uiScale: root.uiScale
-        value: root.cpuFreqMaxGhz > 0 ? root.cpuFreqGhz / root.cpuFreqMaxGhz : 0
-        ringColor: Colors.accent
-        bigText: root.cpuFreqGhz.toFixed(1) + "GHz"
-        smallText: "energía"
+        label: "Reloj"
+        tint: Colors.accent
+
+        RingGauge {
+            uiScale: root.uiScale
+            size: 106
+            value: root.cpuFreqMaxGhz > 0 ? root.cpuFreqGhz / root.cpuFreqMaxGhz : 0
+            ringColor: Colors.accent
+            bigText: root.cpuFreqGhz.toFixed(1) + "GHz"
+            smallText: root.cpuFreqMaxGhz > 0 ? ("max " + root.cpuFreqMaxGhz.toFixed(1) + "GHz") : ""
+        }
     }
 }
