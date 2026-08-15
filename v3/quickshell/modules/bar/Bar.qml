@@ -19,7 +19,7 @@ Item {
     required property var panelWindow
 
     // Padding interno de los grupos de la derecha. El vertical es bien
-    // chico: el contenido (IconButton, 26*uiScale) ya esta ajustado para
+    // chico: el contenido (IconButton, 24*uiScale) ya esta ajustado para
     // entrar en el alto de la barra con poco margen -- si el grupo se
     // agranda mucho se corta contra el borde de la superficie de la
     // PanelWindow (mismo limite que IconButton.qml).

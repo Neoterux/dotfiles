@@ -13,11 +13,13 @@ Item {
     property bool active: false
     property real fontScale: 1
 
-    // Tiene que entrar en el alto de la barra (30*uiScale, ver shell.qml)
-    // con margen -- si se agranda mucho se corta contra el borde de la
-    // superficie de la PanelWindow.
-    implicitWidth: 26 * uiScale
-    implicitHeight: 26 * uiScale
+    // Mismo alto que Pill (24*uiScale, ver Pill.qml) -- antes era
+    // 26*uiScale, un poco mas grande, lo que hacia que los applets de la
+    // derecha (red, bluetooth, terminal, procesos, power) se vieran mas
+    // grandes que los pills de la izquierda (Workspaces, Volume, etc.)
+    // pese a compartir el mismo alto de barra (30*uiScale, ver shell.qml).
+    implicitWidth: 24 * uiScale
+    implicitHeight: 24 * uiScale
 
     signal leftClicked
     signal rightClicked
@@ -40,7 +42,7 @@ Item {
         text: root.icon
         color: root.active ? Colors.accent : root.iconColor
         font.family: Colors.fontFamily
-        font.pixelSize: 13 * root.uiScale * root.fontScale
+        font.pixelSize: 12 * root.uiScale * root.fontScale
     }
 
     // Contenedor para el contenido extra de cada instancia (p.ej. el
