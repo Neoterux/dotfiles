@@ -109,6 +109,7 @@ Item {
 
                 NetworkStatus { id: networkStatus; uiScale: root.uiScale; panelWindow: root.panelWindow }
                 BluetoothButton { id: bluetoothButton; uiScale: root.uiScale; panelWindow: root.panelWindow }
+                NotificationCenter { id: notificationCenter; uiScale: root.uiScale; panelWindow: root.panelWindow }
                 Terminal { uiScale: root.uiScale }
                 Processes { uiScale: root.uiScale }
                 PowerMenu { id: powerMenu; uiScale: root.uiScale; panelWindow: root.panelWindow }
@@ -116,39 +117,51 @@ Item {
         }
     }
 
-    // Los tres botones de arriba con drawer (red, bluetooth, power) estan
-    // muy pegados entre si en la barra -- sin esto, abrir uno mientras otro
-    // ya esta abierto deja los dos popups superpuestos. Cada uno sigue
-    // dueño de su propio `expanded`; esto solo lo apaga desde afuera apenas
-    // otro se prende, no hace falta tocar NetworkStatus/BluetoothButton/
+    // Los cuatro botones de arriba con drawer (red, bluetooth,
+    // notificaciones, power) estan muy pegados entre si en la barra --
+    // sin esto, abrir uno mientras otro ya esta abierto deja los dos
+    // popups superpuestos. Cada uno sigue dueño de su propio `expanded`;
+    // esto solo lo apaga desde afuera apenas otro se prende, no hace
+    // falta tocar NetworkStatus/BluetoothButton/NotificationCenter/
     // PowerMenu para esto.
+    readonly property var drawerOwners: [networkStatus, bluetoothButton, notificationCenter, powerMenu]
+
     Connections {
         target: networkStatus
         function onExpandedChanged() {
-            if (networkStatus.expanded) {
-                bluetoothButton.expanded = false;
-                powerMenu.expanded = false;
-            }
+            if (networkStatus.expanded)
+                root.closeOtherDrawers(networkStatus);
         }
     }
 
     Connections {
         target: bluetoothButton
         function onExpandedChanged() {
-            if (bluetoothButton.expanded) {
-                networkStatus.expanded = false;
-                powerMenu.expanded = false;
-            }
+            if (bluetoothButton.expanded)
+                root.closeOtherDrawers(bluetoothButton);
+        }
+    }
+
+    Connections {
+        target: notificationCenter
+        function onExpandedChanged() {
+            if (notificationCenter.expanded)
+                root.closeOtherDrawers(notificationCenter);
         }
     }
 
     Connections {
         target: powerMenu
         function onExpandedChanged() {
-            if (powerMenu.expanded) {
-                networkStatus.expanded = false;
-                bluetoothButton.expanded = false;
-            }
+            if (powerMenu.expanded)
+                root.closeOtherDrawers(powerMenu);
+        }
+    }
+
+    function closeOtherDrawers(keepOpen) {
+        for (const owner of root.drawerOwners) {
+            if (owner !== keepOpen)
+                owner.expanded = false;
         }
     }
 }

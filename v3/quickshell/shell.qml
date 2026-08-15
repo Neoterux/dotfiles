@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import "modules/bar" as Bar
+import "modules/notifications" as Notif
 
 // Punto de entrada de Quickshell (equivalente al `waybar/config` +
 // `style.css`, pero programable). Levanta una barra flotante por cada
@@ -60,5 +61,13 @@ ShellRoot {
                 panelWindow: panel
             }
         }
+    }
+
+    // Toasts de notificaciones nuevas -- una sola ventana, en el primer
+    // monitor detectado (no una por monitor: son efimeros, duplicarlos no
+    // suma nada y complica rutear cual "es el que importa" por foco).
+    Notif.NotificationPopupWindow {
+        panelScreen: Quickshell.screens[0]
+        uiScale: scaleFor(Quickshell.screens[0] ? Quickshell.screens[0].name : "default")
     }
 }
