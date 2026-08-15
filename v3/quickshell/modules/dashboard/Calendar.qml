@@ -5,17 +5,29 @@ import "../../theme"
 // Calendario simple, mes a mes, sin depender de Qt.labs.calendar (para no
 // atarse a un modulo QML opcional). Todo el calculo de dias es JS/Date
 // puro. Inspirado en el dashboard de caelestia-dots/shell (el config
-// "soramane" del showcase de quickshell.org), pero horizontal y colgando
-// de la barra de arriba en vez de un sidebar vertical.
+// "soramane" del showcase de quickshell.org).
+//
+// Solo la grilla + navegacion de mes -- la hora/fecha grande y la lista
+// de eventos de "Hoy" son tarjetas propias en DashboardTab.qml (antes
+// vivian ahi tambien, pero apiladas todas en una columna quedaba
+// demasiado vertical/angosto). Los datos de eventos externos (ICS/Nylas)
+// tampoco viven aca: los junta CalendarEvents.qml una sola vez y se
+// pasan `eventDayKeys` como prop, asi Calendar/TodayEvents no duplican
+// el fetch.
 ColumnLayout {
     id: root
-    spacing: 12 * uiScale
+    spacing: 10 * uiScale
 
     property real uiScale: 1.0
+    property var eventDayKeys: ({})
 
     property date viewDate: new Date()
     readonly property date today: new Date()
     property var days: buildDays()
+
+    function dayKey(d) {
+        return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+    }
 
     function shiftMonth(delta) {
         const d = new Date(viewDate);
@@ -54,41 +66,11 @@ ColumnLayout {
         monthTransition.restart();
     }
 
-    // Cabecera grande: hora + fecha completa, como "hoy" a simple vista
-    // antes de entrar al detalle del mes.
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-
-        Text {
-            text: root.today.toLocaleTimeString(Qt.locale("es_ES"), "HH:mm")
-            color: Colors.fg
-            font.family: Colors.fontFamily
-            font.pixelSize: 32 * root.uiScale
-            font.bold: true
-        }
-
-        Text {
-            text: root.cap1(root.today.toLocaleDateString(Qt.locale("es_ES"), "dddd d 'de' MMMM"))
-            color: Colors.fg
-            opacity: 0.65
-            font.family: Colors.fontFamily
-            font.pixelSize: 14 * root.uiScale
-        }
-    }
-
-    Rectangle {
-        Layout.fillWidth: true
-        height: 1
-        color: Colors.workspaceBorder
-        opacity: 0.4
-    }
-
     RowLayout {
         Layout.fillWidth: true
 
         Text {
-            text: "" // nf-fa-chevron_left
+            text: "" // nf-fa-chevron_left
             color: Colors.fg
             font.family: Colors.fontFamily
             font.pixelSize: 15 * root.uiScale
@@ -107,12 +89,12 @@ ColumnLayout {
             text: root.cap1(root.viewDate.toLocaleDateString(Qt.locale("es_ES"), "MMMM yyyy"))
             color: Colors.fg
             font.family: Colors.fontFamily
-            font.pixelSize: 15 * root.uiScale
+            font.pixelSize: 14 * root.uiScale
             font.bold: true
         }
 
         Text {
-            text: "" // nf-fa-chevron_right
+            text: "" // nf-fa-chevron_right
             color: Colors.fg
             font.family: Colors.fontFamily
             font.pixelSize: 15 * root.uiScale
@@ -142,21 +124,21 @@ ColumnLayout {
         GridLayout {
             id: grid
             columns: 7
-            rowSpacing: 8 * root.uiScale
-            columnSpacing: 3 * root.uiScale
+            rowSpacing: 6 * root.uiScale
+            columnSpacing: 2 * root.uiScale
             anchors.horizontalCenter: parent.horizontalCenter
 
             Repeater {
                 model: ["D", "L", "M", "M", "J", "V", "S"]
                 delegate: Text {
                     required property string modelData
-                    Layout.preferredWidth: 32 * root.uiScale
+                    Layout.preferredWidth: 28 * root.uiScale
                     horizontalAlignment: Text.AlignHCenter
                     text: modelData
                     color: Colors.fg
                     opacity: 0.5
                     font.family: Colors.fontFamily
-                    font.pixelSize: 13 * root.uiScale
+                    font.pixelSize: 12 * root.uiScale
                     font.bold: true
                 }
             }
@@ -170,8 +152,8 @@ ColumnLayout {
                     readonly property bool inMonth: modelData.getMonth() === root.viewDate.getMonth()
                     readonly property bool isToday: root.isSameDay(modelData, root.today)
 
-                    Layout.preferredWidth: 32 * root.uiScale
-                    Layout.preferredHeight: 32 * root.uiScale
+                    Layout.preferredWidth: 28 * root.uiScale
+                    Layout.preferredHeight: 28 * root.uiScale
                     radius: width / 2
                     color: isToday ? Colors.accent : (cellArea.containsMouse ? Qt.darker(Colors.bg, 0.7) : "transparent")
 
@@ -184,8 +166,21 @@ ColumnLayout {
                         text: cell.modelData.getDate()
                         color: cell.isToday ? Colors.textDark : (cell.inMonth ? Colors.fg : Qt.darker(Colors.fg, 2.2))
                         font.family: Colors.fontFamily
-                        font.pixelSize: 13 * root.uiScale
+                        font.pixelSize: 12 * root.uiScale
                         font.bold: cell.isToday
+                    }
+
+                    // Punto chico si el dia tiene algun evento externo
+                    // (ICS/Nylas) -- no distingue cuantos, solo "hay algo".
+                    Rectangle {
+                        visible: root.eventDayKeys[root.dayKey(cell.modelData)] === true
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 2 * root.uiScale
+                        width: 4 * root.uiScale
+                        height: 4 * root.uiScale
+                        radius: width / 2
+                        color: cell.isToday ? Colors.textDark : Colors.accent
                     }
 
                     MouseArea {
@@ -204,7 +199,7 @@ ColumnLayout {
         text: "hoy"
         color: Colors.accent
         font.family: Colors.fontFamily
-        font.pixelSize: 12 * root.uiScale
+        font.pixelSize: 11 * root.uiScale
         font.underline: true
         visible: root.viewDate.getMonth() !== root.today.getMonth() || root.viewDate.getFullYear() !== root.today.getFullYear()
 

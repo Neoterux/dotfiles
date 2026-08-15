@@ -1,0 +1,14 @@
+{
+  "_comment": "Copiá esto a ~/.local/state/quickshell/calendar.json y completá tus datos reales -- ver CALENDAR.md por las tres opciones (ICS público, DavMail, Nylas). Este archivo .example queda como plantilla, no lo edites in-place.",
+  "provider": "ics",
+  "ics": {
+    "url": "",
+    "username": "",
+    "password": ""
+  },
+  "nylas": {
+    "apiKey": "",
+    "grantId": "",
+    "region": "us"
+  }
+}
