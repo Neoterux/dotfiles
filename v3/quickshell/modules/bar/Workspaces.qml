@@ -75,6 +75,23 @@ Pill {
                 return wins.find(w => w.activated) || wins[0];
             }
             readonly property string appId: wsDelegate.focusedToplevel && wsDelegate.focusedToplevel.wayland ? wsDelegate.focusedToplevel.wayland.appId : ""
+            // El appId de Wayland no siempre coincide con el nombre de
+            // icono real (VSCode: appId "code-oss", icono
+            // "com.visualstudio.code.oss") -- usar el appId directo como
+            // nombre de icono resuelve "bien" (Quickshell.iconPath no
+            // tira error) pero carga el placeholder "imagen rota" del
+            // tema (cuadriculado magenta/negro) en vez de fallar, asi que
+            // ni `status === Image.Ready` lo detecta. `hasThemeIcon`
+            // confirma si el nombre existe de verdad ANTES de intentar
+            // cargarlo, y DesktopEntries resuelve el nombre real del
+            // .desktop cuando el appId no es directamente un icono.
+            readonly property string resolvedIconName: {
+                if (!wsDelegate.appId)
+                    return "";
+                const entry = DesktopEntries.byId(wsDelegate.appId) || DesktopEntries.heuristicLookup(wsDelegate.appId);
+                const name = entry ? entry.icon : wsDelegate.appId;
+                return Quickshell.hasThemeIcon(name) ? name : "";
+            }
             readonly property bool showDetail: wsDelegate.modelData.focused || wsDelegate.hasContent
 
             width: 20 * root.uiScale
@@ -104,10 +121,10 @@ Pill {
             // workspace, o la primera)
             IconImage {
                 id: icon
-                visible: wsDelegate.showDetail && wsDelegate.appId !== "" && status === Image.Ready
+                visible: wsDelegate.showDetail && wsDelegate.resolvedIconName !== "" && status === Image.Ready
                 anchors.centerIn: parent
                 implicitSize: 14 * root.uiScale
-                source: wsDelegate.appId ? Quickshell.iconPath(wsDelegate.appId) : ""
+                source: wsDelegate.resolvedIconName ? Quickshell.iconPath(wsDelegate.resolvedIconName) : ""
             }
 
             // fallback: enfocado pero vacio, o el icono no se pudo resolver

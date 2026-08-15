@@ -150,6 +150,32 @@ concrete new approach — plain rounded corners is the settled answer.
   e.g. a file can't be named `Bluetooth.qml` because `import
   Quickshell.Bluetooth` already exports a type called `Bluetooth`. Hence
   `BluetoothButton.qml`.
+- **`IconImage`/`Quickshell.iconPath(name)` "succeeds" (`status ===
+  Image.Ready`) even when `name` doesn't exist in the icon theme** — the
+  `image://icon/` provider silently substitutes the theme's own "broken
+  image" icon (renders as a magenta/black checkerboard) instead of
+  failing, so `status` can't be used to detect this. Confirmed live for
+  several real names (`input-gaming`, `audio-card`, `network-wired`,
+  `bluetooth`, and any Wayland `appId` used directly as an icon name —
+  see below). The fix is `Quickshell.hasThemeIcon(name)`, which correctly
+  returns `false` for all of these — check it *before* building the
+  `source`, don't try to detect failure after the fact.
+  - Separately: a window's Wayland **`appId` is not reliably its icon
+    name** — VSCode's appId is `code-oss` but its real icon is
+    `com.visualstudio.code.oss` (its own `.desktop` file's `Icon=`
+    disagrees with its `StartupWMClass`). Using `appId` straight into
+    `iconPath()` hits exactly the checkerboard bug above. Resolve it
+    properly first: `DesktopEntries.byId(appId) ||
+    DesktopEntries.heuristicLookup(appId)`, then use that entry's
+    `.icon`, falling back to the bare `appId` only if no entry matches —
+    see `bar/Workspaces.qml`/`dashboard/WorkspacesTab.qml`.
+  - For URLs that are already fully-formed (`trayItem.icon` from
+    StatusNotifierItem, e.g. `image://icon/...` or the raw-pixmap
+    `image://qsimage/...`), `hasThemeIcon` needs the bare name, not the
+    URL — strip the `image://icon/` prefix (and any `?fallback=...`
+    query) before checking, and skip the check entirely for
+    `image://qsimage/` since that's a raw pixmap with no theme name
+    involved — see `tray/TrayItem.qml`.
 
 ### Hyprland-side integration
 

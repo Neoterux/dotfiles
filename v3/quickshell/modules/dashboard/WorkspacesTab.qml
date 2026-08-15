@@ -84,6 +84,19 @@ GridLayout {
                         // poblado -- mismo guard que ya usa Workspaces.qml
                         // (bar) para el icono de cada pill.
                         readonly property string appId: winRow.modelData.wayland ? winRow.modelData.wayland.appId : ""
+                        // Mismo fix que Workspaces.qml (bar): el appId no
+                        // siempre es el nombre de icono real (VSCode es el
+                        // caso claro), y `status === Image.Ready` no
+                        // detecta el placeholder "imagen rota" que carga
+                        // el tema cuando el nombre no existe -- hace falta
+                        // `hasThemeIcon` + resolver via DesktopEntries.
+                        readonly property string resolvedIconName: {
+                            if (!winRow.appId)
+                                return "";
+                            const entry = DesktopEntries.byId(winRow.appId) || DesktopEntries.heuristicLookup(winRow.appId);
+                            const name = entry ? entry.icon : winRow.appId;
+                            return Quickshell.hasThemeIcon(name) ? name : "";
+                        }
 
                         Layout.fillWidth: true
                         spacing: 6 * root.uiScale
@@ -92,8 +105,8 @@ GridLayout {
                             id: winIcon
                             Layout.preferredWidth: 14 * root.uiScale
                             Layout.preferredHeight: 14 * root.uiScale
-                            source: winRow.appId ? Quickshell.iconPath(winRow.appId) : ""
-                            visible: winRow.appId !== "" && status === Image.Ready
+                            source: winRow.resolvedIconName ? Quickshell.iconPath(winRow.resolvedIconName) : ""
+                            visible: winRow.resolvedIconName !== "" && status === Image.Ready
                         }
 
                         Text {
