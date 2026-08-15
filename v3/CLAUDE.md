@@ -130,9 +130,19 @@ concrete new approach — plain rounded corners is the settled answer.
   Anything needing real keyboard focus (the launcher's search box) needs
   its own `PanelWindow` with `focusable: true` instead — see
   `launcher/LauncherPanel.qml`.
-- **`FileView.text()` read inside a declarative binding doesn't update
-  reactively** once the async load finishes. Always use explicit
-  `onLoaded`/`onTextChanged` handlers with an imperative assignment.
+- **`FileView.text()` never refreshes on its own — not even polled
+  imperatively from a `Timer`.** This is broader than "declarative
+  bindings don't update reactively": `text()` re-reads by reassigning
+  `path` to itself, and a same-value property assignment is a no-op, so
+  nothing actually reloads. Confirmed live in `PerformanceTab.qml` —
+  CPU/mem/temp rings sat frozen at their first sample for the entire
+  session (generating real CPU/disk load moved nothing) because the code
+  polled `.text()` on a 2s `Timer` assuming that alone would pick up
+  fresh content. `watchChanges` (inotify) doesn't save you either for
+  `/proc/*`/`/sys/*` — those don't reliably emit change events since the
+  content is regenerated on read, not "modified". The fix: call
+  `.reload()` explicitly, and read the result from an `onLoaded`/
+  `onTextChanged` handler, not immediately after `.reload()`.
 - **Negative `anchor.margins.*` on `PopupWindow` doesn't work reliably** —
   confirmed via pixel-scanning screenshots, effect is either zero or
   non-linearly clamped. Don't rely on it for overlap/concave effects.
