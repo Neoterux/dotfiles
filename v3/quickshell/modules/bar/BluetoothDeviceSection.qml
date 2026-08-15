@@ -82,6 +82,7 @@ ColumnLayout {
 
                     Text {
                         Layout.fillWidth: true
+                        Layout.minimumWidth: 0
                         text: devRow.modelData.name
                         color: Colors.fg
                         font.family: Colors.fontFamily
@@ -91,6 +92,9 @@ ColumnLayout {
                     }
 
                     Text {
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                        elide: Text.ElideRight
                         text: {
                             if (devRow.modelData.pairing)
                                 return "emparejando...";

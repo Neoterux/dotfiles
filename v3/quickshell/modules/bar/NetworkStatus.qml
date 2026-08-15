@@ -146,6 +146,7 @@ IconButton {
 
                 Text {
                     Layout.fillWidth: true
+                    Layout.minimumWidth: 0
                     text: NetworkConnectivity.toString(Networking.connectivity)
                     color: Colors.fg
                     font.family: Colors.fontFamily
@@ -216,6 +217,7 @@ IconButton {
 
                                 Text {
                                     Layout.fillWidth: true
+                                    Layout.minimumWidth: 0
                                     text: wiredRow.modelData.name
                                     color: Colors.fg
                                     font.family: Colors.fontFamily
@@ -225,6 +227,9 @@ IconButton {
                                 }
 
                                 Text {
+                                    Layout.fillWidth: true
+                                    Layout.minimumWidth: 0
+                                    elide: Text.ElideRight
                                     text: wiredRow.modelData.hasLink ? [wiredRow.modelData.address, wiredRow.modelData.linkSpeed > 0 ? wiredRow.modelData.linkSpeed + " Mbps" : ""].filter(s => s).join(" · ") : "sin enlace"
                                     color: Colors.fg
                                     opacity: 0.5
@@ -415,6 +420,7 @@ IconButton {
 
                                         Text {
                                             Layout.fillWidth: true
+                                            Layout.minimumWidth: 0
                                             text: netRow.modelData.name
                                             color: Colors.fg
                                             font.family: Colors.fontFamily
@@ -434,6 +440,9 @@ IconButton {
                                     }
 
                                     Text {
+                                        Layout.fillWidth: true
+                                        Layout.minimumWidth: 0
+                                        elide: Text.ElideRight
                                         text: netRow.modelData.stateChanging ? "conectando..." : (netRow.modelData.connected ? "conectada" : (netRow.modelData.known ? "guardada" : WifiSecurityType.toString(netRow.modelData.security)))
                                         color: Colors.fg
                                         opacity: 0.5

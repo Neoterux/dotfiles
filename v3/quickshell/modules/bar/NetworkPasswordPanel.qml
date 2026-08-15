@@ -83,6 +83,7 @@ PanelWindow {
 
             Text {
                 Layout.fillWidth: true
+                Layout.minimumWidth: 0
                 text: root.network ? root.network.name : ""
                 color: Colors.fg
                 font.family: Colors.fontFamily

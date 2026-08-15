@@ -66,6 +66,7 @@ IconButton {
 
                 Text {
                     Layout.fillWidth: true
+                    Layout.minimumWidth: 0
                     text: root.adapter ? root.adapter.name : "Bluetooth"
                     color: Colors.fg
                     font.family: Colors.fontFamily
