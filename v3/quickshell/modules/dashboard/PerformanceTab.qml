@@ -3,13 +3,14 @@ import QtQuick.Layouts
 import Quickshell.Io
 import "../../theme"
 
-// Pestaña "Performance": uso/temperatura de CPU, GPU y memoria. Los
-// sensores de temperatura salen de /sys/class/hwmon (k10temp / amdgpu en
-// esta maquina), resueltos dinamicamente en vez de hardcodear "hwmon0"
-// porque ese numero puede cambiar entre reinicios.
-RowLayout {
+// Pestaña "Performance": uso/temperatura de CPU, GPU y memoria, uso de
+// disco y actividad de lectura/escritura. Los sensores de temperatura
+// salen de /sys/class/hwmon (k10temp / amdgpu en esta maquina), resueltos
+// dinamicamente en vez de hardcodear "hwmon0" porque ese numero puede
+// cambiar entre reinicios.
+ColumnLayout {
     id: root
-    spacing: 24 * uiScale
+    spacing: 18 * uiScale
 
     property real uiScale: 1.0
     property real cpuUsage: 0
@@ -30,34 +31,110 @@ RowLayout {
     property real cpuFreqGhz: 0
     property real cpuFreqMaxGhz: 1
 
+    // Uso de disco (df, cada 30s -- cambia lento, no hace falta la
+    // cadencia de 2s del resto) y actividad de IO (/proc/diskstats, mismo
+    // timer de 2s que CPU/mem).
+    property var disks: []
+    property var diskNames: []
+    property real prevReadSectors: -1
+    property real prevWriteSectors: -1
+    property real prevIoTime: -1
+    property var ioReadHistory: []
+    property var ioWriteHistory: []
+    readonly property int ioHistoryLen: 40
+
+    // OJO -- gotcha real, no obvio: `FileView.text()` NO relee el archivo
+    // solo por llamarlo de nuevo. `text()` reasigna `path` a si mismo, y
+    // si el path no cambio el setter de abajo no dispara una recarga --
+    // asi que sondear un mismo FileView con un Timer llamando `.text()`
+    // cada vez devuelve SIEMPRE el contenido de la primerca carga (quedo
+    // "congelado"), confirmado en vivo generando carga real de CPU/disco
+    // y viendo que los anillos no se movian ni un poco. Con /proc/*, que
+    // no dispara `watchChanges` (inotify) de forma confiable porque el
+    // contenido se regenera al leer en vez de "cambiar" de verdad, hace
+    // falta `.reload()` explicito + `onLoaded` para efectivamente releer.
     FileView {
         id: statFile
         path: "/proc/stat"
+        onLoaded: root.sampleCpu()
     }
 
     FileView {
         id: memFile
         path: "/proc/meminfo"
+        onLoaded: root.sampleMem()
     }
 
     FileView {
         id: cpuTempFile
         path: root.cpuTempPath
+        onLoaded: root.sampleTemps()
     }
 
     FileView {
         id: gpuTempFile
         path: root.gpuTempPath
+        onLoaded: root.sampleTemps()
     }
 
     FileView {
         id: cpuFreqFile
         path: "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
+        onLoaded: root.sampleFreq()
     }
 
     FileView {
         id: cpuFreqMaxFile
         path: "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"
+        onLoaded: root.sampleFreq()
+    }
+
+    FileView {
+        id: diskstatsFile
+        path: "/proc/diskstats"
+        onLoaded: root.sampleIo()
+    }
+
+    // /sys/block/* -- una entrada por disco *entero* (sda, nvme0n1, ...),
+    // sin las particiones -- se usa para filtrar /proc/diskstats y no
+    // contar cada particion Y el disco entero (eso duplicaria el total).
+    Process {
+        id: blockListProc
+        command: ["ls", "/sys/block"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.diskNames = text.trim().split("\n").filter(s => s.length > 0);
+            }
+        }
+    }
+
+    // Particiones montadas reales: se excluyen los filesystems virtuales
+    // (tmpfs, proc, overlay de contenedores, etc.) para no listar cosas
+    // que no son "un disco" para el usuario.
+    Process {
+        id: dfProc
+        command: ["df", "-B1", "-x", "tmpfs", "-x", "devtmpfs", "-x", "squashfs", "-x", "overlay", "-x", "proc", "-x", "sysfs", "-x", "cgroup2", "-x", "tracefs", "-x", "debugfs", "-x", "devpts", "-x", "mqueue", "-x", "efivarfs", "--output=source,fstype,size,used,avail,target"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = text.trim().split("\n").slice(1);
+                const disks = [];
+                for (const line of lines) {
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length < 6)
+                        continue;
+                    const [source, fstype, size, used, avail, ...targetParts] = parts;
+                    disks.push({
+                        source,
+                        fstype,
+                        size: Number(size),
+                        used: Number(used),
+                        avail: Number(avail),
+                        target: targetParts.join(" "),
+                    });
+                }
+                root.disks = disks;
+            }
+        }
     }
 
     Process {
@@ -127,7 +204,47 @@ RowLayout {
         }
     }
 
-    Component.onCompleted: hwmonDetect.running = true
+    function sampleIo() {
+        if (root.diskNames.length === 0)
+            return;
+
+        const names = {};
+        for (const n of root.diskNames)
+            names[n] = true;
+
+        let readSectors = 0;
+        let writeSectors = 0;
+        for (const line of diskstatsFile.text().split("\n")) {
+            const f = line.trim().split(/\s+/);
+            if (f.length < 11 || !names[f[2]])
+                continue;
+            readSectors += Number(f[5]);
+            writeSectors += Number(f[9]);
+        }
+
+        const now = Date.now();
+        if (root.prevIoTime >= 0) {
+            const dt = (now - root.prevIoTime) / 1000;
+            if (dt > 0) {
+                // Sectores son siempre de 512 bytes, independientemente
+                // del tamaño de bloque real del disco (asi lo define
+                // /proc/diskstats, no es especifico de esta maquina).
+                const readBps = ((readSectors - root.prevReadSectors) * 512) / dt;
+                const writeBps = ((writeSectors - root.prevWriteSectors) * 512) / dt;
+                root.ioReadHistory = [...root.ioReadHistory, Math.max(0, readBps)].slice(-root.ioHistoryLen);
+                root.ioWriteHistory = [...root.ioWriteHistory, Math.max(0, writeBps)].slice(-root.ioHistoryLen);
+            }
+        }
+        root.prevReadSectors = readSectors;
+        root.prevWriteSectors = writeSectors;
+        root.prevIoTime = now;
+    }
+
+    Component.onCompleted: {
+        hwmonDetect.running = true;
+        blockListProc.running = true;
+        dfProc.running = true;
+    }
 
     Timer {
         interval: 2000
@@ -135,69 +252,140 @@ RowLayout {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            root.sampleCpu();
-            root.sampleMem();
-            root.sampleTemps();
-            root.sampleFreq();
+            statFile.reload();
+            memFile.reload();
+            if (root.cpuTempPath)
+                cpuTempFile.reload();
+            if (root.gpuTempPath)
+                gpuTempFile.reload();
+            cpuFreqFile.reload();
+            cpuFreqMaxFile.reload();
+            diskstatsFile.reload();
         }
     }
 
-    MetricCard {
-        uiScale: root.uiScale
-        label: "GPU"
-        tint: Colors.network
-
-        RingGauge {
-            uiScale: root.uiScale
-            size: 106
-            value: root.gpuTempC / 100
-            ringColor: Colors.network
-            bigText: root.gpuTempPath ? (root.gpuTempC + "°C") : "—"
+    // El uso de disco cambia lento -- 30s alcanza de sobra, no hace
+    // falta la cadencia de 2s del resto de las metricas. Toggle
+    // false->true (no solo `= true`) para forzar el reinicio del
+    // Process aunque ya haya terminado -- mismo patron que usa el
+    // Timer de NetworkStatus.qml.
+    Timer {
+        interval: 30000
+        running: true
+        repeat: true
+        onTriggered: {
+            dfProc.running = false;
+            dfProc.running = true;
         }
     }
 
-    MetricCard {
-        uiScale: root.uiScale
-        label: "CPU"
-        tint: Colors.cpu
+    RowLayout {
+        spacing: 24 * root.uiScale
 
-        RingGauge {
+        MetricCard {
             uiScale: root.uiScale
-            size: 106
-            value: root.cpuUsage
-            ringColor: Colors.cpu
-            bigText: root.cpuTempPath ? (root.cpuTempC + "°C") : Math.round(root.cpuUsage * 100) + "%"
-            smallText: root.cpuTempPath ? (Math.round(root.cpuUsage * 100) + "% uso") : ""
+            label: "GPU"
+            tint: Colors.network
+
+            RingGauge {
+                uiScale: root.uiScale
+                size: 106
+                value: root.gpuTempC / 100
+                ringColor: Colors.network
+                bigText: root.gpuTempPath ? (root.gpuTempC + "°C") : "—"
+            }
+        }
+
+        MetricCard {
+            uiScale: root.uiScale
+            label: "CPU"
+            tint: Colors.cpu
+
+            RingGauge {
+                uiScale: root.uiScale
+                size: 106
+                value: root.cpuUsage
+                ringColor: Colors.cpu
+                bigText: root.cpuTempPath ? (root.cpuTempC + "°C") : Math.round(root.cpuUsage * 100) + "%"
+                smallText: root.cpuTempPath ? (Math.round(root.cpuUsage * 100) + "% uso") : ""
+            }
+        }
+
+        MetricCard {
+            uiScale: root.uiScale
+            label: "RAM"
+            tint: Colors.memory
+
+            RingGauge {
+                uiScale: root.uiScale
+                size: 106
+                value: root.memUsage
+                ringColor: Colors.memory
+                bigText: root.memUsedText
+                smallText: "de " + root.memTotalText
+            }
+        }
+
+        MetricCard {
+            uiScale: root.uiScale
+            label: "Reloj"
+            tint: Colors.accent
+
+            RingGauge {
+                uiScale: root.uiScale
+                size: 106
+                value: root.cpuFreqMaxGhz > 0 ? root.cpuFreqGhz / root.cpuFreqMaxGhz : 0
+                ringColor: Colors.accent
+                bigText: root.cpuFreqGhz.toFixed(1) + "GHz"
+                smallText: root.cpuFreqMaxGhz > 0 ? ("max " + root.cpuFreqMaxGhz.toFixed(1) + "GHz") : ""
+            }
         }
     }
 
-    MetricCard {
-        uiScale: root.uiScale
-        label: "RAM"
-        tint: Colors.memory
-
-        RingGauge {
-            uiScale: root.uiScale
-            size: 106
-            value: root.memUsage
-            ringColor: Colors.memory
-            bigText: root.memUsedText
-            smallText: "de " + root.memTotalText
-        }
+    Rectangle {
+        Layout.fillWidth: true
+        height: 1
+        color: Colors.workspaceBorder
+        opacity: 0.25
     }
 
-    MetricCard {
-        uiScale: root.uiScale
-        label: "Reloj"
-        tint: Colors.accent
+    Text {
+        text: "Actividad de disco"
+        color: Colors.fg
+        opacity: 0.5
+        font.family: Colors.fontFamily
+        font.pixelSize: 11 * root.uiScale
+        font.bold: true
+    }
 
-        RingGauge {
-            uiScale: root.uiScale
-            size: 106
-            value: root.cpuFreqMaxGhz > 0 ? root.cpuFreqGhz / root.cpuFreqMaxGhz : 0
-            ringColor: Colors.accent
-            bigText: root.cpuFreqGhz.toFixed(1) + "GHz"
-            smallText: root.cpuFreqMaxGhz > 0 ? ("max " + root.cpuFreqMaxGhz.toFixed(1) + "GHz") : ""
-        }
+    IOGraph {
+        Layout.fillWidth: true
+        Layout.preferredWidth: 420 * root.uiScale
+        uiScale: root.uiScale
+        readHistory: root.ioReadHistory
+        writeHistory: root.ioWriteHistory
+    }
+
+    Rectangle {
+        Layout.fillWidth: true
+        height: 1
+        color: Colors.workspaceBorder
+        opacity: 0.25
+    }
+
+    Text {
+        text: "Discos"
+        color: Colors.fg
+        opacity: 0.5
+        font.family: Colors.fontFamily
+        font.pixelSize: 11 * root.uiScale
+        font.bold: true
+    }
+
+    DiskUsageSection {
+        Layout.fillWidth: true
+        Layout.preferredWidth: 420 * root.uiScale
+        uiScale: root.uiScale
+        disks: root.disks
     }
 }
