@@ -64,10 +64,15 @@ Item {
         blurMax: 24
     }
 
-    Behavior on value {
-        NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
-    }
-
+    // NO Behavior en `value` -- medido en vivo (`top` sobre el proceso de
+    // quickshell mientras esta pestaña esta abierta): una animacion de
+    // 400ms dispara `onValueChanged` -> `canvas.requestPaint()` en cada
+    // frame de la transicion (~24 repintados de Canvas por anillo, x4
+    // anillos, cada 2s), y eso solo ya causaba un pico de ~11-13% CPU
+    // cada muestra -- el stutter reportado. Con el valor asignado directo
+    // (un solo repintado por muestra) el mismo proceso se queda en 0-2%.
+    // El glow (MultiEffect de abajo) NO era el problema: medido solo,
+    // sin esta animacion, es practicamente gratis.
     onValueChanged: canvas.requestPaint()
     onRingColorChanged: canvas.requestPaint()
     onTrackColorChanged: canvas.requestPaint()
