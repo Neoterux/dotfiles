@@ -31,6 +31,15 @@ Rectangle {
         return n && Quickshell.hasThemeIcon(n) ? Quickshell.iconPath(n) : "";
     }
 
+    // La accion con id "default" es especial (spec de freedesktop): se
+    // dispara al clickear la notificacion ENTERA, no un boton -- los
+    // daemons que se portan bien (dunst, mako) no la muestran como chip
+    // aparte. Sin este filtro, Claude Code (entre otras apps) manda esa
+    // accion con texto vacio/no pensado para mostrarse, y se ve como un
+    // chip vacio sin texto -- confirmado en vivo con la notificacion real
+    // "Claude is waiting for your input".
+    readonly property var visibleActions: notification.actions.filter(a => a.identifier !== "default" && a.text !== "")
+
     signal closeRequested
 
     implicitWidth: 320 * uiScale
@@ -131,12 +140,12 @@ Rectangle {
         }
 
         RowLayout {
-            visible: root.notification.actions.length > 0
+            visible: root.visibleActions.length > 0
             Layout.fillWidth: true
             spacing: 8 * root.uiScale
 
             Repeater {
-                model: root.notification.actions
+                model: root.visibleActions
 
                 delegate: ActionChip {
                     required property var modelData
