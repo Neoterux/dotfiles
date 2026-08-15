@@ -1,7 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
-import Quickshell.Widgets
 import "../../theme"
 
 // Una seccion de la lista de bluetooth (Conectados/Emparejados/Disponibles)
@@ -13,6 +11,36 @@ ColumnLayout {
     property real uiScale: 1.0
     property string title: ""
     property var devices: []
+
+    // Glifo por categoria en vez de `Quickshell.iconPath(bluezIconName)`:
+    // probado en vivo, el theme de iconos de esta maquina resuelve pero no
+    // *carga* nombres freedesktop comunes (input-gaming, audio-card,
+    // network-wired, bluetooth, etc. -- todos con
+    // "WARN: Could not load icon" en el log pese a `status === Image.Ready`,
+    // asi que ese `status` no sirve para detectar la falla y el circulo
+    // terminaba mostrando el cuadriculado magenta/negro de "imagen rota").
+    // Glifos son 100% confiables aca porque es el mismo mecanismo que ya
+    // usa el resto de la barra.
+    function deviceGlyph(iconName) {
+        const n = (iconName || "").toLowerCase();
+        if (n.indexOf("gaming") !== -1 || n.indexOf("joystick") !== -1)
+            return ""; // nf-fa-gamepad
+        if (n.indexOf("headset") !== -1 || n.indexOf("headphone") !== -1 || n.indexOf("audio") !== -1)
+            return ""; // nf-fa-headphones
+        if (n.indexOf("phone") !== -1)
+            return ""; // nf-fa-mobile
+        if (n.indexOf("keyboard") !== -1)
+            return ""; // nf-fa-keyboard_o
+        if (n.indexOf("mouse") !== -1)
+            return ""; // nf-fa-mouse_pointer
+        if (n.indexOf("computer") !== -1 || n.indexOf("desktop") !== -1)
+            return ""; // nf-fa-desktop, mismo glifo que DashboardTab.qml
+        if (n.indexOf("printer") !== -1)
+            return ""; // nf-fa-print
+        if (n.indexOf("camera") !== -1)
+            return ""; // nf-fa-camera
+        return ""; // nf-fa-bluetooth_b, mismo glifo que el boton de la barra
+    }
 
     Layout.fillWidth: true
     visible: root.devices.length > 0
@@ -69,10 +97,13 @@ ColumnLayout {
                     radius: width / 2
                     color: devRow.modelData.connected ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.22) : Qt.darker(Colors.bg, 0.5)
 
-                    IconImage {
+                    Text {
                         anchors.centerIn: parent
-                        implicitSize: 16 * root.uiScale
-                        source: devRow.modelData.icon ? Quickshell.iconPath(devRow.modelData.icon, true) : ""
+                        text: root.deviceGlyph(devRow.modelData.icon)
+                        color: devRow.modelData.connected ? Colors.accent : Colors.fg
+                        opacity: devRow.modelData.connected ? 1 : 0.7
+                        font.family: Colors.fontFamily
+                        font.pixelSize: 13 * root.uiScale
                     }
                 }
 
