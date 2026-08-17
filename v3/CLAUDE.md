@@ -60,6 +60,8 @@ quickshell/
       DashboardTab.qml, Calendar.qml
       MediaTab.qml, PerformanceTab.qml, RingGauge.qml, WorkspacesTab.qml
     launcher/                AppLauncher.qml (search+grid) + LauncherPanel.qml (its window)
+  shaders/                   fragment shaders (.frag) + su .qsb compilado
+    bake.sh                    recompila todos los .frag -> .qsb
 ```
 
 Cross-folder references need an explicit relative `import "../drawer"` etc.
@@ -86,14 +88,93 @@ end-to-end.
 The shared dropdown used by Clock, Volume, BluetoothButton, PowerMenu.
 It's a `PopupWindow` anchored to the item that opens it (`anchorItem`),
 sized to its content, glass background (`Colors.bgTranslucent` + Hyprland
-compositor blur, see below) + shadow + open/scale animation. **Deliberately
-plain rounded corners, no border, no cutout/connector effect in the gap
-between bar and drawer** — several attempts at a caelestia-style
-"contracurva" effect (concave cutout, outward wing bulge, a little
-connector tab in the gap) were all tried and rejected as looking wrong;
-caelestia's actual effect is SDF/metaball rendering from a compiled C++
-plugin, not reproducible in plain QML/JS. Don't reattempt this without a
-concrete new approach — plain rounded corners is the settled answer.
+compositor blur, see below) + shadow + open/scale animation.
+
+**La tarjeta ya NO es un `Rectangle`: la dibuja un fragment shader**
+(`shaders/drawer_card.frag`, ver la seccion Shaders). Redondeada abajo y
+con **contracurva** arriba — dos filetes concavos que la abren hacia los
+costados hasta fundirla con la barra.
+
+Esto revierte una decision vieja de este archivo. La version anterior
+decia que la contracurva estaba descartada y que no se reintentara: los
+intentos de entonces la armaban componiendo `Rectangle`/`Canvas`, y por
+ahi no sale, porque unir un cuerpo convexo con dos recortes concavos no
+es componer formas sino operar sobre distancias con signo (`min` para la
+union, `max` para la interseccion). Es lo mismo que hace el plugin C++ de
+caelestia, y en QML se puede desde que existe `ShaderEffect`. Lo unico
+que faltaba era la herramienta, no la idea.
+
+Dos consecuencias de geometria que hay que respetar al tocarlo:
+
+- El popup arranca **a ras del borde de abajo de la barra**, no debajo
+  del pill que lo abre (que flota unos px mas arriba). `anchor.margins.top`
+  se calcula con `anchorItem.mapToItem(null, 0, height)` contra el alto de
+  la `panelWindow`. Si el popup queda separado, la contracurva no toca
+  nada y el efecto no se lee.
+- El popup es `wing` px mas ancho de cada lado que su contenido: ese
+  margen es area de los filetes. `inner` lleva `leftMargin`/`rightMargin`
+  = `pad + wing` para no meter contenido ahi.
+
+### Shaders (`shaders/`)
+
+Quickshell no tiene API propia de shaders: es `ShaderEffect` de QtQuick a
+secas. Lo que si cambia respecto de Qt5 es que **el GLSL inline no
+existe** — `fragmentShader` toma la URL de un bundle `.qsb` precompilado
+con `qsb` (paquete `qt6-shadertools`). Como esta config se carga en
+runtime y no tiene build, los `.qsb` van **commiteados** al repo.
+
+Flujo: tocaste un `.frag` -> `shaders/bake.sh` -> commiteá los dos.
+Quickshell recarga solo al guardar un `.qml`, pero **no** mira los
+`.qsb`: despues de rehornear hay que reiniciar el shell (o tocar
+cualquier `.qml`) o se sigue viendo el shader viejo.
+
+Los cuatro que hay y donde se usan:
+
+| shader | lo usa | anima en reposo |
+|---|---|---|
+| `drawer_card.frag` | `drawer/Drawer.qml` (la contracurva) | no |
+| `glow.frag` | `bar/Workspaces.qml` (workspace enfocado) | no |
+| `dissolve.frag` | `notifications/NotificationToast.qml` (entrada) | no, ~380ms |
+| `bar_sheen.frag` | `bar/Bar.qml` (aurora del fondo) | **si** |
+
+**Regla de costo**: la barra vive prendida, asi que un shader con
+uniforms constantes es gratis (QtQuick no repinta si nada cambia) y uno
+animado no. `bar_sheen` es el unico que anima solo, lo mueve un `Timer` a
+~15fps a proposito (una `NumberAnimation` repinta a la tasa del monitor)
+y se apaga entero con `Bar.sheenEnabled: false`. Cualquier shader nuevo
+que quiera animar en reposo tiene que justificarse igual.
+
+Gotchas propios de esto:
+
+- **`layer.effect` necesita que el `ShaderEffect` declare
+  `property var source` a mano.** `layer.effect` asigna la textura con
+  `setProperty()` sobre el nombre de `layer.samplerName` ("source" por
+  defecto); si esa property no existe, Qt crea una **dinamica**, que el
+  ShaderEffect no mira nunca — el sampler queda vacio y la tarjeta sale
+  en negro, sin ningun error en el log.
+- **Una caida `exp()` no llega a cero nunca**, asi que un halo se corta
+  con un escalon visible justo en el borde del item (se veia como un
+  recuadro claro alrededor del workspace activo). Hay que multiplicarla
+  por una ventana que la apague antes del limite — ver el par
+  `spread`/`cutoff` en `glow.frag`.
+- **Los colores de QML llegan premultiplicados** al uniform `vec4`, asi
+  que la salida se arma como `color * alpha` y no `vec4(color.rgb, alpha)`.
+- El `vec2 size` en px se pasa como `property vector2d size:
+  Qt.vector2d(width, height)` — es un binding, se actualiza solo al
+  cambiar de tamaño. Un shader que asume 0..1 y no sabe su tamaño real no
+  puede hacer esquinas de radio fijo.
+- **Para probar un shader, lo mas rapido es una config aparte de 20
+  lineas** (`quickshell -p /ruta/test.qml`) con un `PanelWindow` chico y
+  el `ShaderEffect` adentro: itera en segundos y no depende de que el
+  modulo real este en el estado correcto. `status` del ShaderEffect
+  arranca en 1 (Uncompiled) y pasa a 0 (Compiled) recien al dibujarse por
+  primera vez; si se queda en 1, el item no se esta dibujando (tamaño 0,
+  invisible, o la capa no se activo).
+  - Ojo al armar el mock: envolver el componente real en un `Loader` para
+    fabricarlo a mano **no reprodujo** el efecto (el `ShaderEffect` de la
+    capa quedaba para siempre en Uncompiled) aunque el componente real
+    anda bien. Si algo no se ve en un mock, verificalo instanciando el
+    componente de verdad antes de salir a buscar el bug en el shader.
 
 ### Real gotchas (not obvious from reading the code cold)
 
@@ -146,6 +227,20 @@ concrete new approach — plain rounded corners is the settled answer.
     opener has to ignore it — see the `justDismissed()` grace window in
     `tray/TrayItem.qml`, without which the same click closes and reopens
     the menu.
+  - Dos drawers pidiendo el grab **a la vez** (p.ej. el mismo modulo
+    abierto en los dos monitores) no conviven: el compositor le limpia el
+    grab a uno de los dos en el acto y ese se cierra solo, sin que haya
+    habido ningun click. En uso real no pasa (se abre uno por vez), pero
+    si aparece al testear con dos instancias abiertas a proposito, es
+    esto y no un bug del modulo.
+- **`ObjectModel.values` (`trackedNotifications.values`,
+  `trayItems.values`, etc.) es una vista VIVA del modelo, no una copia** —
+  el wrapper de secuencia de QML relee la propiedad en cada acceso por
+  indice, asi que sacar elementos del modelo mientras se la itera
+  (`for...of`, `forEach`) saltea uno de cada dos. Fue un bug real en
+  `NotificationState.clearAll()`: "limpiar todo" limpiaba la mitad, y otra
+  mitad en el siguiente click. Congelar con `.slice()` antes de tocar
+  nada. Solo para leer/`.length`/`.filter` sin mutar es seguro tal cual.
 - **`FileView.text()` never refreshes on its own — not even polled
   imperatively from a `Timer`.** This is broader than "declarative
   bindings don't update reactively": `text()` re-reads by reassigning

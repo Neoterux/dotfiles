@@ -42,6 +42,39 @@ Rectangle {
 
     signal closeRequested
 
+    // Entrada "materializandose" (shaders/dissolve.frag) en vez de un
+    // fade plano. Solo para toasts: en el historial las tarjetas se crean
+    // todas de golpe al abrir el drawer y verlas disolverse en bloque es
+    // ruido, no efecto -- de ahi que `isPopupContext` (que hasta ahora era
+    // decorativa) por fin decida algo.
+    property real dissolveProgress: root.isPopupContext ? 0 : 1
+
+    NumberAnimation {
+        target: root
+        property: "dissolveProgress"
+        from: 0
+        to: 1
+        duration: 380
+        easing.type: Easing.OutCubic
+        running: root.isPopupContext
+    }
+
+    // La capa existe solo mientras dura la animacion: al terminar se
+    // apaga y no queda ni la textura intermedia ni el shader colgados de
+    // una tarjeta que se va a quedar quieta varios segundos.
+    layer.enabled: root.dissolveProgress < 1
+    layer.effect: ShaderEffect {
+        // `source` va declarada a mano a proposito: layer.effect asigna
+        // la textura con setProperty() sobre el nombre de layer.samplerName,
+        // y si la property no existe Qt crea una dinamica que el
+        // ShaderEffect no mira -- el sampler queda vacio y la tarjeta sale
+        // en negro.
+        property var source
+        property real progress: root.dissolveProgress
+        property color sparkColor: root.urgencyColor
+        fragmentShader: Qt.resolvedUrl("../../shaders/dissolve.frag.qsb")
+    }
+
     implicitWidth: 320 * uiScale
     implicitHeight: content.implicitHeight + 20 * uiScale
     radius: 14 * uiScale
@@ -49,6 +82,19 @@ Rectangle {
     opacity: 0.97
     border.width: 1
     border.color: Qt.rgba(urgencyColor.r, urgencyColor.g, urgencyColor.b, 0.35)
+
+    // Click del medio en cualquier parte de la tarjeta = descartarla, lo
+    // mismo que la X (convencion de dunst/mako/swaync). Va declarado ANTES
+    // del contenido a proposito: el hit-test de QtQuick va del ultimo hijo
+    // al primero, asi que esto queda por DEBAJO de la X y de los chips de
+    // accion. Y como solo acepta el boton del medio, los clicks izquierdos
+    // pasan de largo -- ni les roba los suyos a los chips, ni le corta el
+    // arrastre al Flickable del historial.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.MiddleButton
+        onClicked: root.closeRequested()
+    }
 
     ColumnLayout {
         id: content

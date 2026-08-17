@@ -21,6 +21,11 @@ QtObject {
     // toast se saca de aca solo (su propio timer) sin afectar el
     // historial; el historial se vacia solo con "olvidar"/dismiss.
     property var popupIds: []
+    // Tope de toasts simultaneos en pantalla. Sin esto una rafaga (un
+    // build largo, un chat activo) apila tarjetas hasta pasarse del borde
+    // inferior de la pantalla. Los que se caen del tope siguen enteros en
+    // el historial del drawer, solo no muestran toast.
+    readonly property int maxPopups: 4
 
     readonly property NotificationServer server: NotificationServer {
         keepOnReload: true
@@ -51,7 +56,7 @@ QtObject {
     }
 
     function showPopup(notif) {
-        root.popupIds = [...root.popupIds, notif.id];
+        root.popupIds = [...root.popupIds, notif.id].slice(-root.maxPopups);
         // 0/-1 son "el sender no pidio un timeout especifico" segun la
         // spec de freedesktop -- 5s de default es lo que usan la mayoria
         // de daemons (mako, dunst) para ese caso.
@@ -66,10 +71,28 @@ QtObject {
         root.popupIds = root.popupIds.filter(i => i !== id);
     }
 
+    // OJO: `trackedNotifications.values` es una vista VIVA del modelo, no
+    // una copia -- destrackear/descartar un elemento lo saca de la lista
+    // en el acto, asi que iterarla mientras se la modifica se saltea uno
+    // de cada dos (el sintoma era "limpiar todo limpia la mitad"). El
+    // `.slice()` congela la lista antes de tocar nada.
+    //
+    // `dismiss()` (y no `tracked = false`) para que el que la mando se
+    // entere del cierre, igual que el boton X de cada tarjeta. Destruye la
+    // notificacion, asi que no hay que tocarle nada mas despues.
     function clearAll() {
-        for (const n of root.server.trackedNotifications.values) {
-            n.tracked = false;
+        const list = root.server.trackedNotifications.values.slice();
+        for (const n of list) {
+            // El chequeo no sobra: si alguna ya se destruyo mientras se
+            // recorria la copia, su wrapper queda nulo y el TypeError
+            // cortaria el for a la mitad, dejando el resto sin limpiar.
+            if (n)
+                n.dismiss();
         }
+        // Los toasts en pantalla apuntan a estas mismas notificaciones: si
+        // no se limpian, quedan tarjetas colgadas de un objeto ya
+        // destruido (findTracked devuelve null y los bindings tiran error).
+        root.popupIds = [];
     }
 
     // Componente-fabrica para el timer de auto-cierre de cada popup --

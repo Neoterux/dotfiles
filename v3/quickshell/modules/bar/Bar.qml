@@ -26,6 +26,11 @@ Item {
     readonly property real groupHPad: 8 * uiScale
     readonly property real groupVPad: 1 * uiScale
 
+    // Interruptor del unico efecto que anima solo (ver el ShaderEffect
+    // `sheen` mas abajo). Se apaga desde shell.qml si molesta o si hace
+    // falta bajar el consumo.
+    property bool sheenEnabled: true
+
     // Fondo de la barra: a todo el ancho, sin borde ni esquinas
     // redondeadas (antes era un pill flotante centrado; ahora ocupa todo
     // el espacio, pegado a los bordes de la pantalla).
@@ -45,6 +50,39 @@ Item {
         shadowBlur: 0.5
         shadowVerticalOffset: 2
         blurMax: 16
+    }
+
+    // Aurora lenta sobre el fondo de la barra (shaders/bar_sheen.frag).
+    // Va declarada despues de `barBg` y antes de los modulos: mismo z, y
+    // entre hermanos con el mismo z QtQuick pinta en orden de
+    // declaracion, asi que queda sobre el fondo y debajo de todo el
+    // contenido.
+    //
+    // Es el UNICO shader del shell que anima en reposo. Si algun dia la
+    // barra tiene que costar cero, esto es lo primero que se apaga:
+    // `sheenEnabled: false` y no queda nada corriendo.
+    ShaderEffect {
+        id: sheen
+        anchors.fill: barBg
+        visible: root.sheenEnabled
+        fragmentShader: Qt.resolvedUrl("../../shaders/bar_sheen.frag.qsb")
+        blending: true
+
+        property real time: 0
+        property real intensity: 0.14
+        property color tintA: Colors.accent
+        property color tintB: Colors.clock
+
+        // A proposito un Timer y no una NumberAnimation: la animacion
+        // declarativa repinta a la tasa del monitor (144/165Hz aca), y
+        // para un degrade que tarda ~40s en cruzar la barra eso es tirar
+        // ~130 frames por segundo a la basura. A 15fps se ve igual.
+        Timer {
+            running: sheen.visible
+            repeat: true
+            interval: 66
+            onTriggered: sheen.time += 0.066
+        }
     }
 
     RowLayout {

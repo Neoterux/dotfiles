@@ -64,11 +64,27 @@ PopupWindow {
     anchor.edges: Edges.Bottom
     anchor.gravity: Edges.Bottom
     anchor.adjustment: PopupAdjustment.Slide
-    anchor.margins.top: Math.round(8 * uiScale)
+    // El ancla es el pill que abre el drawer, y ese pill FLOTA unos px
+    // por encima del borde de abajo de la barra (24*uiScale de alto
+    // dentro de una barra de 30*uiScale). Anclar a secas dejaria el
+    // popup arrancando dentro de la barra, tapandole los ultimos
+    // pixeles; el margen viejo de 8px lo dejaba flotando separado. Para
+    // que la contracurva tenga con que fundirse, el popup tiene que
+    // empezar EXACTAMENTE donde termina la barra.
+    anchor.margins.top: {
+        if (!root.anchorItem || !root.panelWindow)
+            return 0;
+        const bottom = root.anchorItem.mapToItem(null, 0, root.anchorItem.height).y;
+        return Math.max(0, Math.round(root.panelWindow.height - bottom));
+    }
 
     readonly property real pad: 20 * uiScale
+    // Lado del filete concavo que une la tarjeta con la barra. Tambien es
+    // cuanto se ensancha el popup: los filetes viven en ese margen, a los
+    // costados del cuerpo (ver shaders/drawer_card.frag).
+    readonly property real wing: 16 * uiScale
 
-    implicitWidth: inner.childrenRect.width + pad * 2
+    implicitWidth: inner.childrenRect.width + pad * 2 + wing * 2
     implicitHeight: inner.childrenRect.height + pad * 2
     color: "transparent"
     visible: shown || closeAnim.running
@@ -111,14 +127,29 @@ PopupWindow {
         }
     }
 
-    // Tarjeta principal: esquinas redondeadas normales, sin borde -- el
-    // look es el vidrio esmerilado (blur de Hyprland via layer_rule) + la
-    // sombra.
-    Rectangle {
+    // Tarjeta principal, dibujada por SDF (shaders/drawer_card.frag):
+    // redondeada abajo y con "contracurva" arriba -- dos filetes concavos
+    // que la abren hacia los costados hasta fundirse con la barra.
+    //
+    // Esto es lo que en su momento se dio por imposible (ver v3/CLAUDE.md):
+    // con Rectangles/Canvas no salia porque la union de un cuerpo convexo
+    // con dos recortes concavos no se compone con formas, se resuelve con
+    // distancias con signo. El plugin C++ de caelestia hace exactamente
+    // esto; en QML se puede desde que ShaderEffect existe.
+    //
+    // El resto del look no cambia: sin borde, vidrio esmerilado (blur de
+    // Hyprland via layer_rule) + sombra.
+    ShaderEffect {
         id: card
         anchors.fill: parent
-        radius: 18 * root.uiScale
-        color: Colors.bg
+        fragmentShader: Qt.resolvedUrl("../../shaders/drawer_card.frag.qsb")
+        blending: true
+
+        property vector2d size: Qt.vector2d(width, height)
+        property real radius: 18 * root.uiScale
+        property real wing: root.wing
+        property color fill: Colors.bg
+
         transformOrigin: Item.Top
         opacity: 0
         scale: 0.94
@@ -159,6 +190,10 @@ PopupWindow {
         id: inner
         anchors.fill: parent
         anchors.margins: root.pad
+        // Los costados llevan ademas el ancho del filete: ese margen es
+        // area de la contracurva, no del contenido.
+        anchors.leftMargin: root.pad + root.wing
+        anchors.rightMargin: root.pad + root.wing
         opacity: 0
 
         SequentialAnimation {

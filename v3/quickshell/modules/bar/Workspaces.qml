@@ -60,7 +60,7 @@ Pill {
     Repeater {
         model: root.regular
 
-        delegate: Rectangle {
+        delegate: Item {
             id: wsDelegate
             required property var modelData
 
@@ -96,46 +96,87 @@ Pill {
 
             width: 20 * root.uiScale
             height: 20 * root.uiScale
-            radius: 8 * root.uiScale
-            clip: true
-            color: "transparent"
-            border.width: wsDelegate.modelData.focused ? 1.5 : 0
-            border.color: Colors.accent
 
-            Behavior on border.width {
-                NumberAnimation { duration: 120 }
+            // Cuanto se desborda el halo por fuera de la caja. El delegate
+            // dejo de ser el Rectangle para poder dibujarlo: `box` sigue
+            // con `clip: true` (recorta iconos/nombres largos) y un halo
+            // hijo suyo quedaria cortado justo en el borde, que es
+            // exactamente donde tiene que verse.
+            readonly property real glowMargin: 9 * root.uiScale
+
+            // Resplandor del workspace enfocado. Sin uniforms animados no
+            // repinta salvo cuando cambia el foco, y con `visible` en
+            // false ni siquiera llega al scene graph.
+            ShaderEffect {
+                anchors.centerIn: parent
+                width: parent.width + wsDelegate.glowMargin * 2
+                height: parent.height + wsDelegate.glowMargin * 2
+                fragmentShader: Qt.resolvedUrl("../../shaders/glow.frag.qsb")
+                blending: true
+
+                property vector2d size: Qt.vector2d(width, height)
+                property vector2d boxHalf: Qt.vector2d(wsDelegate.width * 0.5, wsDelegate.height * 0.5)
+                property real radius: 8 * root.uiScale
+                // `spread` bien por debajo del margen para que la
+                // exponencial ya este casi apagada cuando la ventana del
+                // shader la corta -- ver el comentario en glow.frag.
+                property real spread: wsDelegate.glowMargin / 2.6
+                property real cutoff: wsDelegate.glowMargin
+                property real intensity: 0.55
+                property color glowColor: Colors.accent
+
+                opacity: wsDelegate.modelData.focused ? 1 : 0
+                visible: opacity > 0.01
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                }
             }
 
-            // vacio y sin foco: solo un punto
             Rectangle {
-                visible: !wsDelegate.showDetail
-                anchors.centerIn: parent
-                width: 6 * root.uiScale
-                height: 6 * root.uiScale
-                radius: width / 2
-                color: Colors.fg
-                opacity: 0.45
-            }
+                id: box
+                anchors.fill: parent
+                radius: 8 * root.uiScale
+                clip: true
+                color: "transparent"
+                border.width: wsDelegate.modelData.focused ? 1.5 : 0
+                border.color: Colors.accent
 
-            // con contenido: icono de la app (la que tenga foco dentro del
-            // workspace, o la primera)
-            IconImage {
-                id: icon
-                visible: wsDelegate.showDetail && wsDelegate.resolvedIconName !== "" && status === Image.Ready
-                anchors.centerIn: parent
-                implicitSize: 14 * root.uiScale
-                source: wsDelegate.resolvedIconName ? Quickshell.iconPath(wsDelegate.resolvedIconName) : ""
-            }
+                Behavior on border.width {
+                    NumberAnimation { duration: 120 }
+                }
 
-            // fallback: enfocado pero vacio, o el icono no se pudo resolver
-            Text {
-                visible: wsDelegate.showDetail && !icon.visible
-                anchors.centerIn: parent
-                text: wsDelegate.modelData.name
-                color: wsDelegate.modelData.focused ? Colors.accent : Colors.fg
-                font.family: Colors.fontFamily
-                font.pixelSize: root.fontPixelSize
-                font.bold: true
+                // vacio y sin foco: solo un punto
+                Rectangle {
+                    visible: !wsDelegate.showDetail
+                    anchors.centerIn: parent
+                    width: 6 * root.uiScale
+                    height: 6 * root.uiScale
+                    radius: width / 2
+                    color: Colors.fg
+                    opacity: 0.45
+                }
+
+                // con contenido: icono de la app (la que tenga foco dentro del
+                // workspace, o la primera)
+                IconImage {
+                    id: icon
+                    visible: wsDelegate.showDetail && wsDelegate.resolvedIconName !== "" && status === Image.Ready
+                    anchors.centerIn: parent
+                    implicitSize: 14 * root.uiScale
+                    source: wsDelegate.resolvedIconName ? Quickshell.iconPath(wsDelegate.resolvedIconName) : ""
+                }
+
+                // fallback: enfocado pero vacio, o el icono no se pudo resolver
+                Text {
+                    visible: wsDelegate.showDetail && !icon.visible
+                    anchors.centerIn: parent
+                    text: wsDelegate.modelData.name
+                    color: wsDelegate.modelData.focused ? Colors.accent : Colors.fg
+                    font.family: Colors.fontFamily
+                    font.pixelSize: root.fontPixelSize
+                    font.bold: true
+                }
             }
 
             MouseArea {
