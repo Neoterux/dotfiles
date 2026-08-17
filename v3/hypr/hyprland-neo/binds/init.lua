@@ -60,6 +60,26 @@ function M.setup()
     -- Move/resize windows with mainMod + LMB/RMB and dragging
     hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
     hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+    -- Dwindle: invertir la orientacion del split actual -- las dos ventanas
+    -- del contenedor pasan de lado-a-lado a apiladas y viceversa. Sirve
+    -- sobre lo que YA existe (se ve el efecto al instante), no para elegir
+    -- donde se abre la proxima ventana (eso seria `preselect l|r|u|d`).
+    --
+    -- Va en el boton del medio (mouse:274) porque SUPER + click izq/der ya
+    -- estan tomados por el arrastre de mover/redimensionar de arriba, y
+    -- SUPER + rueda por la navegacion de workspaces.
+    --
+    -- OJO: sin `{ mouse = true }`. Esa opcion es el `bindm` clasico y
+    -- existe solo para los dispatchers de arrastre (drag/resize), que
+    -- necesitan el boton mantenido y despues liberado; `togglesplit` es
+    -- una accion instantanea y va como bind normal.
+    --
+    -- Solo hace algo en workspaces en dwindle: los otros layouts responden
+    -- "Unknown <layout> layoutmsg" y no pasa nada. Tampoco hace nada si el
+    -- workspace tiene una sola ventana ("can't togglesplit in the current
+    -- workspace") -- no hay split que invertir todavia.
+    hl.bind(mainMod .. " + mouse:274", hl.dsp.layout("togglesplit"))
 end
 
 return M

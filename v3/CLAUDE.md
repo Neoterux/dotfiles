@@ -1,8 +1,11 @@
 # Hyprland + Quickshell rice — project context
 
 This repo is `labfernandez2014@gmail.com`'s Hyprland setup on Arch Linux
-("GMachine", dual monitor DP-1 2560x1440 + DP-3 1920x1080, gruvbox theme).
-It has two living parts:
+(gruvbox theme), shared across **several machines** — "GMachine" (DP-1
+2560x1440 + DP-3 1920x1080, full keyboard) and "wmachine" (the work box:
+two 1080p outputs, corne split keyboard). Anything that differs per machine
+lives in `hyprland-neo/machines/<hostname>.json`, never hardcoded in the
+Lua — see "Per-machine profiles" below. It has two living parts:
 
 - **`hyprland-neo/`** — the active Hyprland config, written in Lua against
   Hyprland 0.56.1's native Lua config API (`hl.*`). `hyprland.lua` is the
@@ -46,6 +49,7 @@ quickshell/
       Pill.qml, IconButton.qml  the two reusable building blocks every module wraps
       Slider.qml
       Launcher.qml, Backlight.qml, Volume.qml, Workspaces.qml
+      WorkspaceLayout.qml     layout de tiling del workspace activo (ver abajo)
       NetworkStatus.qml, BluetoothButton.qml, Terminal.qml, Processes.qml
       PowerMenu.qml, PowerMenuButton.qml
       Clock.qml               centered, hover-opens the Dashboard drawer
@@ -130,6 +134,18 @@ concrete new approach — plain rounded corners is the settled answer.
   Anything needing real keyboard focus (the launcher's search box) needs
   its own `PanelWindow` with `focusable: true` instead — see
   `launcher/LauncherPanel.qml`.
+  - Consequence: an xdg-popup never hears about clicks outside its own
+    surface, so "close when I click elsewhere" can't be done inside the
+    popup. `HyprlandFocusGrab { windows: [popup]; active: shown }` asks
+    the compositor for the input grab and fires `cleared` on the first
+    outside click — clicks inside keep working and it renders fine (it is
+    not the `grabFocus` path). Wired into `drawer/Drawer.qml` as the
+    opt-in `dismissOnClickOutside`/`dismissed` pair; the hover-opened
+    drawers (Clock) deliberately leave it off. If the compositor ever
+    delivers that clearing click to the surface underneath as well, the
+    opener has to ignore it — see the `justDismissed()` grace window in
+    `tray/TrayItem.qml`, without which the same click closes and reopens
+    the menu.
 - **`FileView.text()` never refreshes on its own — not even polled
   imperatively from a `Timer`.** This is broader than "declarative
   bindings don't update reactively": `text()` re-reads by reassigning
@@ -175,7 +191,98 @@ concrete new approach — plain rounded corners is the settled answer.
     URL — strip the `image://icon/` prefix (and any `?fallback=...`
     query) before checking, and skip the check entirely for
     `image://qsimage/` since that's a raw pixmap with no theme name
-    involved — see `tray/TrayItem.qml`.
+    involved.
+  - **A `?path=` query means `hasThemeIcon` must NOT be consulted at
+    all.** That query is the SNI `IconThemePath`: the app ships its own
+    icon dir and quickshell resolves the name from there, but
+    `hasThemeIcon` only knows the *system* theme and answers `false`.
+    JetBrains Toolbox is the live case (`IconName toolbox-tray-color` +
+    `IconThemePath ~/.local/share/JetBrains/Toolbox/bin`, i.e.
+    `image://icon/toolbox-tray-color?path=...`) — checking the bare name
+    ate its logo and left the fallback glyph. Verified by rendering both
+    forms side by side: with the query it draws the real icon, without it
+    the checkerboard. All of this now lives in one place,
+    `tray/TrayIcons.qml` (`TrayIcons.usable(url)`), used by both
+    `tray/TrayItem.qml` and `tray/TrayMenuList.qml`.
+- **`trayItem.display(window, x, y)` doesn't work in this shell** — it
+  opens a *platform* (QtWidgets) menu and dies with `Cannot display
+  PlatformMenuEntry as quickshell was not started in QApplication mode`,
+  fixable only by adding `//@ pragma UseQApplication` to `shell.qml`.
+  That was rejected: it drags QtWidgets into the process and the menu
+  would render in the system style, not the bar's. Tray context menus are
+  drawn in QML instead — `QsMenuOpener { menu: trayItem.menu }` exposes
+  the DBusMenu entries as a model (`.children.values`, each with `text`,
+  `enabled`, `isSeparator`, `icon`, `buttonType`/`checkState`,
+  `hasChildren`, and `triggered()` to fire it) — see
+  `tray/TrayMenuList.qml`, which renders them inside the shared `Drawer`
+  and recurses into submenus through a `Loader` (QML rejects a file that
+  instantiates its own type directly).
+  - JetBrains Toolbox's DBusMenu doesn't implement
+    `Properties.GetAll`, so quickshell logs `Error updating properties of
+    …/com.canonical.dbusmenu` on every open. Harmless noise — the entries
+    come from `GetLayout` and render fine.
+
+### Layout de tiling por workspace (`bar/WorkspaceLayout.qml`)
+
+Hyprland 0.56 guarda el layout **por workspace**, no solo global:
+`hyprctl -j workspaces` trae un campo `tiledLayout` por entrada, y los
+valores validos son los de `general:layout` (`dwindle` / `master` /
+`scrolling` / `monocle` / `lua:<nombre>`).
+
+- **Lo unico que lo cambia es una workspace rule con campo `layout`** —
+  no hay dispatcher para esto, y `hl.dsp.workspace` solo expone
+  `change_id`/`move`/`rename`/`swap_monitors`/`toggle_special`. Aplicarla
+  en caliente es instantaneo y **retroactivo** sobre las ventanas que ya
+  estan en el workspace (verificado en vivo).
+- **`hyprctl keyword` no sirve con la config en Lua**: responde `keyword
+  can't work with non-legacy parsers. Use eval.` La via es
+  `hyprctl eval 'hl.workspace_rule({ workspace = "N", layout = "master" })'`
+  desde un `Process`, igual que PowerMenu llama a `hl.dsp.exit()`.
+  (`hyprctl eval` devuelve siempre `ok`; para ver el valor de retorno de
+  un snippet Lua, `hyprctl repl '<code>'` — util para introspeccionar
+  `hl.*` en vivo.)
+- **La regla es de runtime**: un reload de la config de Hyprland la borra
+  y el workspace vuelve a `general.layout`.
+  - Y **Hyprland recarga la config Lua sola al guardar cualquier archivo
+    de `hyprland-neo/`** (confirmado en vivo: editar `binds/init.lua`
+    aplico el bind nuevo sin pedir nada, y de paso borro las
+    workspace/window rules que se habian seteado por `hyprctl eval`).
+    O sea: editar la config = perder los layouts elegidos desde la barra.
+    Si algun workspace tiene que arrancar siempre con un layout dado, va
+    como `hl.workspace_rule({ workspace = "3", layout = "master" })` en
+    `workspaces/init.lua`, no por la barra.
+  - Corolario al registrar binds a mano: si ya hubo hot-reload, el bind
+    del archivo YA esta puesto, y un `hyprctl eval 'hl.bind(...)'` encima
+    lo **duplica** (`hyprctl binds` lo muestra dos veces con args Lua
+    distintos). Para un toggle eso es peor que inutil: se dispara dos
+    veces por click y queda todo igual. Se limpia con
+    `hl.unbind("<chord>")`, que saca TODAS las registraciones de esa
+    combinacion, y despues se vuelve a registrar una sola vez.
+- **Cambiar una workspace rule no emite ningun evento IPC**, asi que
+  Quickshell no se entera solo: hay que llamar a
+  `Hyprland.refreshWorkspaces()` a mano para que
+  `HyprlandWorkspace.lastIpcObject.tiledLayout` se actualice. El modulo lo
+  hace en el `onExited` del `Process` y tambien al cambiar de workspace
+  activo (el layout pudo haber cambiado desde afuera mientras tanto).
+- El modulo apunta al workspace activo **de su propio monitor**
+  (`Hyprland.monitorFor(panelWindow.screen).activeWorkspace`), no a
+  `Hyprland.focusedWorkspace` — si no, la barra del monitor secundario
+  mostraria y cambiaria el layout del otro.
+- **El workspace especial (scratchpad) NO aparece nunca como
+  `activeWorkspace`.** Hyprland lo lleva en un slot aparte por monitor
+  (`specialWorkspace` en `hyprctl -j monitors`, `{id=0, name=""}` cuando
+  esta cerrado) y lo deja *superpuesto* sobre el workspace normal, que
+  sigue figurando como el activo — asi que ni `activeWorkspace` ni
+  `focusedWorkspace` se enteran de que el scratchpad esta arriba.
+  `HyprlandMonitor` no expone ese slot como propiedad; sale de
+  `monitor.lastIpcObject.specialWorkspace`. El selector para la regla es
+  el nombre completo (`workspace = "special:magic"`), y funciona igual.
+  - Abrirlo/cerrarlo tampoco emite ningun evento de workspace: lo unico
+    que llega es `activespecial>>special:magic,<MONITOR>` (+ la variante
+    `activespecialv2` con el id). Se escucha con
+    `Connections { target: Hyprland; function onRawEvent(event) {...} }`
+    y se responde con `Hyprland.refreshMonitors()`, que actualiza
+    `lastIpcObject` y recalcula los bindings.
 
 ### Hyprland-side integration
 
@@ -185,6 +292,33 @@ drawer glass/translucent (they're all the same layer-shell namespace, so
 one rule covers all of them). If a new top-level Quickshell surface is
 added with a different namespace, it needs its own rule or an adjustment
 to the match pattern.
+
+## Per-machine profiles
+
+`hyprland-neo/machines/<hostname>.json` describes everything that is a
+property of the *machine* rather than of the config: monitor layout (the
+full `HL.MonitorSpec` surface, passed through verbatim), which workspaces
+are pinned to which output, each monitor's initial workspace, and whether
+the keyboard is a split (corne) or a standard one. `lib/machine.lua`
+resolves it (`$HYPRNEO_MACHINE` → `<hostname>` → `default.json`),
+normalizes it, and caches it; `lib/json.lua` is a self-contained pure-Lua
+decoder (the embedded Lua has no cjson/yaml, and a broken external
+dependency means a session that won't start).
+
+**Rule: never hardcode an output name, a resolution, a workspace-to-monitor
+binding, or a keyboard assumption in the Lua.** Add a field to the JSON
+schema instead. `monitors/init.lua` and `binds/init.lua` are deliberately
+thin — they just iterate what the profile hands them. Full format reference
+in `hyprland-neo/machines/README.md`.
+
+Loading failures degrade instead of throwing: a missing or malformed
+profile falls back to "no `hl.monitor` calls at all" (Hyprland autodetects)
+and raises a notification. Keep it that way — a config error that leaves
+the machine with no display is much worse than a wrong layout.
+
+Testable outside a live session: stub `hl` and `require` the modules under
+plain `lua` (both are pure data transforms), which is how the current
+profiles were validated.
 
 ## Testing changes
 

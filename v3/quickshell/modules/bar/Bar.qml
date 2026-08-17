@@ -57,6 +57,7 @@ Item {
         Backlight { uiScale: root.uiScale }
         Volume { uiScale: root.uiScale; panelWindow: root.panelWindow }
         Workspaces { uiScale: root.uiScale }
+        WorkspaceLayout { uiScale: root.uiScale; panelWindow: root.panelWindow }
     }
 
     Clock {

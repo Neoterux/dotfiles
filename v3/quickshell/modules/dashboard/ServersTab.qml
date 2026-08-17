@@ -15,14 +15,24 @@ import "../../theme"
 // Formato esperado -- un array de objetos:
 //   [
 //     { "name": "prod-api", "status": "up", "url": "https://...",
-//       "latencyMs": 42, "checkedAt": "2026-08-09T21:00:00Z", "note": "" }
+//       "engine": "postgres", "latencyMs": 42,
+//       "checkedAt": "2026-08-09T21:00:00Z", "note": "",
+//       "metrics": [ { "label": "conn", "value": "42/100",
+//                      "level": "warn", "ratio": 0.42 } ] }
 //   ]
 // `status` es uno de "up" | "down" | "degraded" | "unknown" (cualquier
 // otro valor cae a "unknown"). Solo "name" es obligatorio -- el resto es
 // opcional y se omite en la tarjeta si no viene.
 //
-// Ver scripts/update-server-status.example.sh para un punto de partida
-// de como escribir ese archivo desde chequeos reales (curl a cada URL).
+// `metrics` es una lista generica de indicadores: la tab NO sabe nada de
+// bases de datos ni de motores, solo dibuja label/value y colorea segun
+// `level` ("ok" | "warn" | "crit"). Cualquier checker futuro (HTTP, colas,
+// lo que sea) puede llenarla sin tocar este archivo. `ratio` (0..1) es
+// opcional y agrega la barrita de uso debajo del valor -- solo tiene
+// sentido en metricas que son "usado de un maximo".
+//
+// Ver scripts/check-db-servers.py (checker de BDD, ya hecho) y
+// scripts/update-server-status.example.sh (plantilla para uno propio).
 // `watchChanges: true` hace que esto se actualice solo apenas el archivo
 // cambia (inotify), sin poll -- consistente con el resto del dashboard.
 GridLayout {
@@ -40,6 +50,25 @@ GridLayout {
         case "down": return Colors.statusDown;
         case "degraded": return Colors.statusDegraded;
         default: return Colors.statusUnknown;
+        }
+    }
+
+    // Solo warn/crit se colorean: si "ok" tambien pintara, la tarjeta
+    // quedaria toda de colores y no se distinguiria de un vistazo cual es
+    // el indicador que hay que mirar.
+    function levelColor(level) {
+        switch (level) {
+        case "crit": return Colors.statusDown;
+        case "warn": return Colors.statusDegraded;
+        default: return Colors.fg;
+        }
+    }
+
+    function barColor(level) {
+        switch (level) {
+        case "crit": return Colors.statusDown;
+        case "warn": return Colors.statusDegraded;
+        default: return Colors.statusUp;
         }
     }
 
@@ -90,7 +119,7 @@ GridLayout {
     Text {
         Layout.columnSpan: 2
         visible: root.servers.length === 0
-        text: "sin datos -- escribi el estado de tus servidores en\n~/.local/state/quickshell/servers.json"
+        text: "sin datos -- configura tus servidores en\n~/.config/quickshell/db-servers.json y corre\nscripts/check-db-servers.py"
         color: Colors.fg
         opacity: 0.5
         font.family: Colors.fontFamily
@@ -107,10 +136,28 @@ GridLayout {
             id: card
             required property var modelData
             readonly property string status: ["up", "down", "degraded"].includes(card.modelData.status) ? card.modelData.status : "unknown"
+            // OJO: aca NO sirve Array.isArray, aunque en el `reload()` de
+            // arriba si. Al array de nivel superior lo devuelve JSON.parse y
+            // es un Array de verdad; este viene anidado y pasa por el modelo
+            // del Repeater, asi que Qt lo entrega envuelto en un V4Sequence
+            // (`Object.prototype.toString` da "[object V4Sequence]"). Sobre
+            // eso Array.isArray da false y la grilla entera quedaba invisible
+            // -- con los datos ahi, accesibles por indice y con .length bien.
+            // Se chequea por length, que el V4Sequence si expone.
+            readonly property var metrics: {
+                const m = card.modelData.metrics;
+                return (m && typeof m === "object" && m.length > 0) ? m : [];
+            }
 
             readonly property color tint: root.statusColor(card.status)
 
-            Layout.preferredWidth: 210 * root.uiScale
+            // 268px sale de la cuenta del renglon del titulo con el nombre
+            // real mas largo del usuario ("[PG] Produccion W/R", 19 chars):
+            // JetBrains Mono avanza 0.6em, o sea 7.8px por caracter a 13px
+            // => 148px de nombre + 9 del punto + 16 de spacings + 48 de la
+            // palabra "degraded" + 20 de margenes = 241. Con 232 no entraba
+            // y el nombre salia cortado.
+            Layout.preferredWidth: 268 * root.uiScale
             Layout.fillHeight: true
             Layout.minimumHeight: content.implicitHeight + 18 * root.uiScale
             radius: 12 * root.uiScale
@@ -129,6 +176,7 @@ GridLayout {
                 spacing: 4 * root.uiScale
 
                 RowLayout {
+                    Layout.fillWidth: true
                     spacing: 8 * root.uiScale
 
                     Rectangle {
@@ -145,6 +193,13 @@ GridLayout {
                         font.family: Colors.fontFamily
                         font.pixelSize: 13 * root.uiScale
                         font.bold: true
+                        // Ensanchar la tarjeta soluciona los nombres que hay
+                        // hoy, no los que el usuario ponga mañana: con dos
+                        // lineas un nombre largo se lee entero en vez de
+                        // perder el final, que suele ser lo que distingue
+                        // una entrada de otra ("... R1" vs "... R2").
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
                         elide: Text.ElideRight
                     }
 
@@ -157,15 +212,32 @@ GridLayout {
                     }
                 }
 
-                Text {
-                    visible: !!card.modelData.url
+                // Motor y direccion comparten renglon: el motor solo no
+                // justifica gastar una linea entera de la tarjeta.
+                RowLayout {
                     Layout.fillWidth: true
-                    text: card.modelData.url || ""
-                    color: Colors.fg
-                    opacity: 0.6
-                    font.family: Colors.fontFamily
-                    font.pixelSize: 10 * root.uiScale
-                    elide: Text.ElideRight
+                    spacing: 5 * root.uiScale
+                    visible: !!card.modelData.url || !!card.modelData.engine
+
+                    Text {
+                        visible: !!card.modelData.engine
+                        text: card.modelData.engine || ""
+                        color: Colors.accent
+                        opacity: 0.85
+                        font.family: Colors.fontFamily
+                        font.pixelSize: 9 * root.uiScale
+                        font.bold: true
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: card.modelData.url || ""
+                        color: Colors.fg
+                        opacity: 0.6
+                        font.family: Colors.fontFamily
+                        font.pixelSize: 10 * root.uiScale
+                        elide: Text.ElideLeft
+                    }
                 }
 
                 Text {
@@ -179,8 +251,91 @@ GridLayout {
                     wrapMode: Text.WordWrap
                 }
 
+                Rectangle {
+                    visible: card.metrics.length > 0
+                    Layout.fillWidth: true
+                    Layout.topMargin: 3 * root.uiScale
+                    Layout.preferredHeight: Math.max(1, root.uiScale)
+                    color: Colors.fg
+                    opacity: 0.12
+                }
+
+                GridLayout {
+                    visible: card.metrics.length > 0
+                    Layout.fillWidth: true
+                    Layout.topMargin: 2 * root.uiScale
+                    columns: 2
+                    columnSpacing: 10 * root.uiScale
+                    rowSpacing: 3 * root.uiScale
+
+                    Repeater {
+                        model: card.metrics
+
+                        delegate: ColumnLayout {
+                            id: metricCell
+                            required property var modelData
+
+                            // fillWidth + preferredWidth igual en las dos
+                            // celdas es lo que las reparte 50/50: sin el
+                            // preferredWidth, cada columna se dimensiona
+                            // segun su texto y la grilla queda despareja.
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            spacing: 1 * root.uiScale
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 4 * root.uiScale
+
+                                Text {
+                                    text: metricCell.modelData.label || ""
+                                    color: Colors.fg
+                                    opacity: 0.45
+                                    font.family: Colors.fontFamily
+                                    font.pixelSize: 9 * root.uiScale
+                                    elide: Text.ElideRight
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Text {
+                                    text: metricCell.modelData.value !== undefined ? String(metricCell.modelData.value) : ""
+                                    color: root.levelColor(metricCell.modelData.level)
+                                    opacity: metricCell.modelData.level === "warn" || metricCell.modelData.level === "crit" ? 1 : 0.85
+                                    font.family: Colors.fontFamily
+                                    font.pixelSize: 10 * root.uiScale
+                                    font.bold: metricCell.modelData.level === "crit"
+                                }
+                            }
+
+                            Rectangle {
+                                visible: typeof metricCell.modelData.ratio === "number"
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 2 * root.uiScale
+                                radius: height / 2
+                                // Alpha en el color, NO `opacity`: la opacity
+                                // de un Rectangle la heredan sus hijos, y el
+                                // relleno de la barra quedaria invisible.
+                                color: Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.15)
+
+                                Rectangle {
+                                    width: parent.width * Math.max(0, Math.min(1, metricCell.modelData.ratio || 0))
+                                    height: parent.height
+                                    radius: parent.radius
+                                    color: root.barColor(metricCell.modelData.level)
+
+                                    Behavior on width {
+                                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 RowLayout {
                     Layout.fillWidth: true
+                    Layout.topMargin: 2 * root.uiScale
                     spacing: 6 * root.uiScale
 
                     Text {

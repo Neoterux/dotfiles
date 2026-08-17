@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import Quickshell
+import Quickshell.Hyprland
 import "../../theme"
 
 // Drawer reutilizable (mismo nombre que usa caelestia-dots/shell para este
@@ -50,6 +51,13 @@ PopupWindow {
     // mas mientras corre `closeAnim`, para que no desaparezca de un tiron
     // (antes solo la apertura estaba animada, el cierre era instantaneo).
     property bool shown: false
+    // Cerrar al clickear afuera. Opt-in y no por defecto: los drawers que
+    // se abren por hover (el del reloj) no lo quieren -- un grab de
+    // entrada mientras el mouse solo esta pasando por encima se comeria
+    // clicks que no son para el drawer.
+    property bool dismissOnClickOutside: false
+
+    signal dismissed
 
     anchor.window: panelWindow
     anchor.item: anchorItem
@@ -79,6 +87,17 @@ PopupWindow {
     // con `focusable`) en vez de este componente, justamente por eso.
 
     signal opened
+
+    // Un xdg-popup no se entera de NADA que pase fuera de su superficie, y
+    // el `grabFocus` que serviria para eso no renderiza (ver nota de mas
+    // arriba). HyprlandFocusGrab le pide al compositor el grab de entrada
+    // para esta ventana: los clicks adentro siguen funcionando igual y el
+    // primero que caiga afuera dispara `cleared` en vez de perderse.
+    HyprlandFocusGrab {
+        active: root.dismissOnClickOutside && root.shown
+        windows: [root]
+        onCleared: root.dismissed()
+    }
 
     onShownChanged: {
         if (shown) {
