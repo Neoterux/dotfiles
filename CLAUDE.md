@@ -9,3 +9,15 @@ is `v3`. For more information about this, you should read the [v3 CLAUDE.md](./v
 file.
 
 All of the previous version can be marked as outdated and without support.
+
+## System fixes
+
+`etc/` mirrors system-wide config files (analogous to `usr/`) that aren't
+tied to a dotfiles version. `scripts/` holds one-off apply scripts for them,
+since these live outside $HOME and need root to install.
+
+- `scripts/fix-sudo-delay.sh` — installs `etc/pam.d/system-auth`, which
+  removes the multi-second delay sudo shows after a wrong password
+  (pam_unix's built-in ~2s anti-bruteforce delay, replaced with an explicit
+  0.5s one via pam_faildelay.so). Run it once per machine; it asks for sudo
+  itself and backs up the original file first.
