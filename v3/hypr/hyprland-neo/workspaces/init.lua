@@ -13,10 +13,19 @@ function M.setup()
     -- esmerilado. `ignore_alpha` hace que el blur tambien se aplique a
     -- las zonas mas transparentes (si no, con alpha bajo Hyprland puede
     -- saltearse el blur ahi).
+    --
+    -- `blur_popups` NO es redundante con `blur`: los drawers de la barra
+    -- son xdg-popups, no layer surfaces -- no aparecen siquiera en
+    -- `hyprctl layers`, ahi solo figuran la barra y la ventana de toasts.
+    -- Con `blur` a secas la barra quedaba esmerilada y los drawers no:
+    -- translucidos pero sin desenfocar, o sea que se leia el texto de la
+    -- ventana de atras a traves del dashboard. Verificado en vivo
+    -- prendiendo y apagando esta linea.
     hl.layer_rule({
         name = "glass-quickshell",
         match = { namespace = "^quickshell$" },
         blur = true,
+        blur_popups = true,
         ignore_alpha = 0.05,
     })
 

@@ -62,11 +62,15 @@ function M.setup()
                 color = "rgba(1a1a1aee)",
             },
 
+            -- Blur detras de ventanas translucidas (kitty corre con
+            -- background_opacity 0.45). OJO: `background_blur` de kitty NO
+            -- hace nada en Hyprland -- kitty solo implementa blur propio en
+            -- macOS y KWin; en Hyprland el desenfoque lo hace el compositor
+            -- y depende enteramente de esta seccion.
             blur = {
                 enabled = true,
-                size = 3,
-                passes = 1,
-                vibrancy = 0.1696,
+                size = 6,
+                passes = 2,
             },
         },
 
