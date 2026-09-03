@@ -20,8 +20,22 @@ local envs = {
     XCURSOR_SIZE = '24',
 
     GDK_BACKEND = 'wayland,x11,*',
-    SFL_VIDEODRIVER = 'wayland',
-    CLUTTER_BACKEND = 'wayland',
+    SDL_VIDEODRIVER = 'wayland',
+
+    --[[
+        SSH agent: single owner is gcr-ssh-agent (unlocked by gnome-keyring at
+        login). Exporting it session-wide stops every GUI app - and any shell
+        that inherits the session env - from spawning its own stray ssh-agent.
+        UID 1000 is fixed on this box; Hyprland does not expand $XDG_RUNTIME_DIR.
+    ]]
+    SSH_AUTH_SOCK = '/run/user/1000/gcr/ssh',
+
+    --[[
+        Electron / Firefox / JetBrains on wlroots
+    ]]
+    ELECTRON_OZONE_PLATFORM_HINT = 'auto',
+    MOZ_ENABLE_WAYLAND = '1',
+    _JAVA_AWT_WM_NONREPARENTING = '1',
 }
 local M = {}
 

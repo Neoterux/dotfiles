@@ -88,6 +88,20 @@ function M.setup()
             },
             splash_font_family = "JetBrains Mono",
             force_default_wallpaper = -1,
+            -- Rendimiento en un escritorio de desarrollo (pantalla estatica la
+            -- mayor parte del tiempo): no repintar a full framerate cuando nada
+            -- se mueve, y no renderizar logo/splash de fondo.
+            --vfr = true,
+            vrr = 0,
+            disable_hyprland_logo = true,
+            disable_splash_rendering = true,
+            background_color = "0x1d2021",
+        },
+
+        render = {
+            -- explicit_sync = 1,
+            -- explicit_sync_kms = 1,
+            direct_scanout = true,
         },
 
         input = {
