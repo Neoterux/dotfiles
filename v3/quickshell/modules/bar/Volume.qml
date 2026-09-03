@@ -66,10 +66,24 @@ Pill {
     }
 
     Drawer {
+        id: volumeDrawer
         anchorItem: root
         panelWindow: root.panelWindow
         uiScale: root.uiScale
         shown: root.expanded
+        // Se abre al pasar el mouse, igual que los applets de la derecha:
+        // el puente hover->expanded vive en Drawer.qml (ver `hoverOpen`).
+        hoverOpen: true
+        hoverSource: root
+        // Mientras se arrastra el slider, el mouse puede salirse del
+        // popup sin soltar (el MouseArea del slider se queda con el grab)
+        // y el hover cerraria el drawer a mitad de la arrastrada.
+        hoverHold: volumeSlider.pressed
+        onOpenRequested: root.expanded = true
+        onCloseRequested: root.expanded = false
+        // ESC lo cierra sin mover el mouse. No se reabre solo: el puente
+        // de hover dispara por CAMBIO de estado, hay que salir y volver.
+        onEscapePressed: root.expanded = false
 
         ColumnLayout {
             spacing: 12 * root.uiScale
@@ -118,6 +132,7 @@ Pill {
                 }
 
                 Slider {
+                    id: volumeSlider
                     uiScale: root.uiScale
                     value: root.sink && root.sink.audio ? root.sink.audio.volume / 1.5 : 0
                     onMoved: v => {

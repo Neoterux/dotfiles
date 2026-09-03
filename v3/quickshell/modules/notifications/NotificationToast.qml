@@ -49,6 +49,13 @@ Rectangle {
     // decorativa) por fin decida algo.
     property real dissolveProgress: root.isPopupContext ? 0 : 1
 
+    // Lo prende el que maneja la lista de toasts cuando a este le toca
+    // irse (se le vencio el timeout, o le tocaron la X). No lo destruye:
+    // le avisa que se disuelva, y recien cuando termina emite `exited`
+    // para que lo saquen del modelo.
+    property bool exiting: false
+    signal exited
+
     NumberAnimation {
         target: root
         property: "dissolveProgress"
@@ -56,7 +63,22 @@ Rectangle {
         to: 1
         duration: 380
         easing.type: Easing.OutCubic
-        running: root.isPopupContext
+        // Al marcarse la salida, el binding corta la entrada solo: nada
+        // de stop() imperativo peleando contra el binding.
+        running: root.isPopupContext && !root.exiting
+    }
+
+    // Salida: el mismo barrido, al reves. Antes el toast simplemente
+    // desaparecia de un frame al otro cuando se le vencia el timeout --
+    // entraba disolviendose y se iba de golpe.
+    NumberAnimation {
+        target: root
+        property: "dissolveProgress"
+        to: 0
+        duration: 300
+        easing.type: Easing.InCubic
+        running: root.exiting
+        onFinished: root.exited()
     }
 
     // La capa existe solo mientras dura la animacion: al terminar se

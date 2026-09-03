@@ -16,6 +16,12 @@ Item {
 
     signal moved(real value)
 
+    // Lo mira el Drawer que contenga este slider (`hoverHold`): mientras
+    // se arrastra, el MouseArea de abajo se queda con el grab del puntero
+    // y el mouse puede salirse del popup sin soltar. Sin esto, el drawer
+    // por hover se cierra en plena arrastrada.
+    readonly property bool pressed: sliderMouse.pressed
+
     function setFromX(x) {
         const v = Math.max(0, Math.min(1, x / track.width));
         root.value = v;
@@ -48,6 +54,7 @@ Item {
     }
 
     MouseArea {
+        id: sliderMouse
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         onPressed: mouse => root.setFromX(mouse.x)

@@ -27,20 +27,11 @@ IconButton {
     active: root.count > 0
     fontScale: 1.05
 
-    // Mismo patron que TrayItem: el click que cierra el drawer por
-    // click-afuera tambien llega a este icono, y sin la ventana de gracia
-    // el toggle de abajo lo reabriria en el mismo click.
-    property double lastDismiss: 0
-
-    function justDismissed(): bool {
-        return Date.now() - root.lastDismiss < 200;
-    }
-
-    onLeftClicked: {
-        if (root.justDismissed())
-            return;
-        root.expanded = !root.expanded;
-    }
+    // El click sigue sirviendo para cerrarlo sin mover el mouse (se abre
+    // solo al pasar por encima). Ya no hace falta la ventana de gracia
+    // que tenia TrayItem: esa era para el click-afuera, que este drawer
+    // dejo de usar al pasar a hover.
+    onLeftClicked: root.expanded = !root.expanded
     onRightClicked: NotificationState.doNotDisturb = !NotificationState.doNotDisturb
 
     // Numerito con la cantidad, esquina superior derecha del icono --
@@ -72,15 +63,21 @@ IconButton {
         panelWindow: root.panelWindow
         uiScale: root.uiScale
         shown: root.expanded
-        // El drawer se abre por click (no por hover), asi que el grab de
-        // entrada no se come nada: cerrarlo clickeando en cualquier lado
-        // es la unica salida cuando la lista es larga y tapa media
-        // pantalla.
-        dismissOnClickOutside: true
-        onDismissed: {
-            root.lastDismiss = Date.now();
-            root.expanded = false;
-        }
+        // Se abre al pasar el mouse, igual que el reloj (puente en
+        // Drawer.qml). Y por eso mismo ya NO lleva
+        // `dismissOnClickOutside`: ese grab de entrada se activaria con
+        // solo pasar el mouse por encima y se comeria clicks que no son
+        // para el drawer -- justo el caso que la nota de CLAUDE.md marca
+        // como el motivo de que los drawers por hover no lo usen. Sacar
+        // el mouse ya lo cierra.
+        hoverOpen: true
+        hoverSource: root
+        onOpenRequested: root.expanded = true
+        onCloseRequested: root.expanded = false
+        // ESC lo cierra sin tener que mover el mouse. No se vuelve a
+        // abrir solo: el puente de hover dispara por CAMBIO de estado,
+        // asi que hay que salir y volver a entrar.
+        onEscapePressed: root.expanded = false
 
         ColumnLayout {
             // `width` explicito, no `Layout.preferredWidth` -- el padre

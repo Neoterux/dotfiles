@@ -49,6 +49,12 @@ PanelWindow {
                 notification: NotificationState.findTracked(modelData)
                 visible: !!notification
 
+                // El id sale del modelo recien cuando la animacion de
+                // salida termino (`exited`), no cuando se decide que se
+                // va: si se sacara antes, el Repeater destruiria el
+                // delegate en el acto y no quedaria nada que disolver.
+                exiting: NotificationState.exitingIds.indexOf(toastDelegate.modelData) !== -1
+                onExited: NotificationState.finishPopup(toastDelegate.modelData)
                 onCloseRequested: NotificationState.dismissPopup(toastDelegate.modelData)
             }
         }

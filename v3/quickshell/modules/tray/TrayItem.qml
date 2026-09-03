@@ -79,6 +79,16 @@ IconButton {
             root.lastDismiss = Date.now();
             root.menuOpen = false;
         }
+        // ESC tambien cierra el menu de bandeja. Aca la tecla llega
+        // siempre que este abierto (el grab de `dismissOnClickOutside` ya
+        // esta activo), a diferencia de los drawers por hover, donde solo
+        // llega con el puntero adentro. Se marca `lastDismiss` igual que
+        // en el click-afuera: si no, un click sobre el mismo icono justo
+        // despues de cerrar con ESC lo reabre.
+        onEscapePressed: {
+            root.lastDismiss = Date.now();
+            root.menuOpen = false;
+        }
 
         // El menu se arma recien al abrirlo: QsMenuOpener mantiene abierto
         // el DBusMenu de la app mientras exista, y no tiene sentido tener

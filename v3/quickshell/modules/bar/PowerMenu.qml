@@ -52,6 +52,16 @@ IconButton {
         panelWindow: root.panelWindow
         uiScale: root.uiScale
         shown: root.expanded
+        // Se abre al pasar el mouse, igual que el reloj: el puente
+        // hover->expanded vive en Drawer.qml (ver `hoverOpen` ahi).
+        hoverOpen: true
+        hoverSource: root
+        onOpenRequested: root.expanded = true
+        onCloseRequested: root.expanded = false
+        // ESC lo cierra sin tener que mover el mouse. No se vuelve a
+        // abrir solo: el puente de hover dispara por CAMBIO de estado,
+        // asi que hay que salir y volver a entrar.
+        onEscapePressed: root.expanded = false
 
         RowLayout {
             spacing: 10 * root.uiScale

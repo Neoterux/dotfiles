@@ -48,32 +48,23 @@ Pill {
         font.bold: true
     }
 
-    // Bridging: se muestra mientras el mouse este sobre el pill O sobre
-    // el popup, con un margen de "closeDelay" antes de cerrarse del
-    // todo -- asi da tiempo a mover el cursor de uno a otro.
-    readonly property bool wantsOpen: root.hovered || dashPopup.hovered
-
-    onWantsOpenChanged: {
-        if (wantsOpen) {
-            closeTimer.stop();
-            root.expanded = true;
-        } else {
-            closeTimer.restart();
-        }
-    }
-
-    Timer {
-        id: closeTimer
-        interval: 300
-        onTriggered: root.expanded = false
-    }
-
+    // El puente hover->expanded (incluido el margen para cruzar del pill
+    // al popup sin que se cierre) ya no vive aca: es `hoverOpen` en
+    // Drawer.qml, que ahora usan todos los modulos con drawer.
     Drawer {
         id: dashPopup
         anchorItem: root
         panelWindow: root.panelWindow
         uiScale: root.uiScale
         shown: root.expanded
+        hoverOpen: true
+        hoverSource: root
+        onOpenRequested: root.expanded = true
+        onCloseRequested: root.expanded = false
+        // ESC lo cierra sin tener que mover el mouse. No se vuelve a
+        // abrir solo: el puente de hover dispara por CAMBIO de estado,
+        // asi que hay que salir y volver a entrar.
+        onEscapePressed: root.expanded = false
 
         Dashboard { uiScale: root.uiScale }
     }

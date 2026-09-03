@@ -21,6 +21,15 @@ QtObject {
     // toast se saca de aca solo (su propio timer) sin afectar el
     // historial; el historial se vacia solo con "olvidar"/dismiss.
     property var popupIds: []
+    // Ids que estan REPRODUCIENDO su animacion de salida. Siguen en
+    // `popupIds` (o sea, siguen instanciados y en pantalla) hasta que la
+    // animacion termina y el propio toast avisa con finishPopup().
+    //
+    // Hace falta esta lista intermedia porque el Repeater destruye el
+    // delegate en el instante en que el id sale del modelo: sacarlo y
+    // "despues" animar es imposible, ya no hay nada que animar. Por eso
+    // el timer de expiracion no borra, marca.
+    property var exitingIds: []
     // Tope de toasts simultaneos en pantalla. Sin esto una rafaga (un
     // build largo, un chat activo) apila tarjetas hasta pasarse del borde
     // inferior de la pantalla. Los que se caen del tope siguen enteros en
@@ -57,6 +66,10 @@ QtObject {
 
     function showPopup(notif) {
         root.popupIds = [...root.popupIds, notif.id].slice(-root.maxPopups);
+        // Si el tope se llevo puesto alguno que estaba saliendo, su
+        // delegate ya no existe y nunca va a llamar a finishPopup(): sin
+        // esta poda su id se quedaria para siempre en la lista.
+        root.exitingIds = root.exitingIds.filter(i => root.popupIds.indexOf(i) !== -1);
         // 0/-1 son "el sender no pidio un timeout especifico" segun la
         // spec de freedesktop -- 5s de default es lo que usan la mayoria
         // de daemons (mako, dunst) para ese caso.
@@ -67,8 +80,22 @@ QtObject {
         });
     }
 
+    // Arranca la salida del toast: NO lo saca de pantalla, lo marca para
+    // que se disuelva. Lo llama tanto el timer de expiracion como la X /
+    // el click del medio de la tarjeta.
     function dismissPopup(id) {
+        if (root.popupIds.indexOf(id) === -1)
+            return;
+        if (root.exitingIds.indexOf(id) !== -1)
+            return;
+        root.exitingIds = [...root.exitingIds, id];
+    }
+
+    // La llama el toast cuando termino de disolverse. Recien aca
+    // desaparece de verdad.
+    function finishPopup(id) {
         root.popupIds = root.popupIds.filter(i => i !== id);
+        root.exitingIds = root.exitingIds.filter(i => i !== id);
     }
 
     // OJO: `trackedNotifications.values` es una vista VIVA del modelo, no
@@ -93,6 +120,7 @@ QtObject {
         // no se limpian, quedan tarjetas colgadas de un objeto ya
         // destruido (findTracked devuelve null y los bindings tiran error).
         root.popupIds = [];
+        root.exitingIds = [];
     }
 
     // Componente-fabrica para el timer de auto-cierre de cada popup --

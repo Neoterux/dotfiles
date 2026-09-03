@@ -3,6 +3,7 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import "../../theme"
 import "../tray"
+import "../drawer"
 
 // Layout general de la barra: izquierda / centro / derecha. Todos los
 // componentes de esta carpeta viven en la misma carpeta, asi que QML los
@@ -52,6 +53,32 @@ Item {
         blurMax: 16
     }
 
+    // La mitad del contorno que le toca a la barra cuando hay un drawer
+    // abierto (shaders/bar_edge.frag): la linea del filo de abajo con un
+    // hueco justo del ancho del drawer, para que el contorno del drawer
+    // la continue y las dos piezas se lean como una sola.
+    //
+    // Solo la dibuja la barra del monitor donde esta el drawer abierto:
+    // DrawerLink.window desempata (ver modules/drawer/DrawerLink.qml).
+    ShaderEffect {
+        id: barEdge
+        anchors.fill: barBg
+        visible: DrawerLink.window === root.panelWindow && DrawerLink.reveal > 0.001
+        opacity: DrawerLink.reveal
+        fragmentShader: Qt.resolvedUrl("../../shaders/bar_edge.frag.qsb")
+        blending: true
+
+        property vector2d size: Qt.vector2d(width, height)
+        property real lineWidth: Math.max(1, Math.round(1.2 * root.uiScale))
+        property real gapStart: DrawerLink.x + DrawerLink.join
+        property real gapEnd: DrawerLink.x + DrawerLink.width - DrawerLink.join
+        // Cuanto se estira la linea a los costados del drawer antes de
+        // desaparecer. Cruzar la barra entera se veia como una regla
+        // pegada abajo; asi parece el contorno del drawer derramandose.
+        property real falloff: 260 * root.uiScale
+        property color borderColor: Colors.accent
+    }
+
     // Aurora lenta sobre el fondo de la barra (shaders/bar_sheen.frag).
     // Va declarada despues de `barBg` y antes de los modulos: mismo z, y
     // entre hermanos con el mismo z QtQuick pinta en orden de
@@ -61,28 +88,20 @@ Item {
     // Es el UNICO shader del shell que anima en reposo. Si algun dia la
     // barra tiene que costar cero, esto es lo primero que se apaga:
     // `sheenEnabled: false` y no queda nada corriendo.
+    // El reloj y los colores salen del singleton theme/Sheen.qml, no de
+    // aca: los drawers continuan esta misma onda en su propia superficie
+    // y necesitan leer exactamente el mismo tiempo (ver Sheen.qml).
     ShaderEffect {
         id: sheen
         anchors.fill: barBg
-        visible: root.sheenEnabled
+        visible: root.sheenEnabled && Sheen.enabled
         fragmentShader: Qt.resolvedUrl("../../shaders/bar_sheen.frag.qsb")
         blending: true
 
-        property real time: 0
-        property real intensity: 0.14
-        property color tintA: Colors.accent
-        property color tintB: Colors.clock
-
-        // A proposito un Timer y no una NumberAnimation: la animacion
-        // declarativa repinta a la tasa del monitor (144/165Hz aca), y
-        // para un degrade que tarda ~40s en cruzar la barra eso es tirar
-        // ~130 frames por segundo a la basura. A 15fps se ve igual.
-        Timer {
-            running: sheen.visible
-            repeat: true
-            interval: 66
-            onTriggered: sheen.time += 0.066
-        }
+        property real time: Sheen.time
+        property real intensity: Sheen.intensity
+        property color tintA: Sheen.tintA
+        property color tintB: Sheen.tintB
     }
 
     RowLayout {

@@ -128,11 +128,12 @@ Quickshell recarga solo al guardar un `.qml`, pero **no** mira los
 `.qsb`: despues de rehornear hay que reiniciar el shell (o tocar
 cualquier `.qml`) o se sigue viendo el shader viejo.
 
-Los cuatro que hay y donde se usan:
+Los que hay y donde se usan:
 
 | shader | lo usa | anima en reposo |
 |---|---|---|
-| `drawer_card.frag` | `drawer/Drawer.qml` (la contracurva) | no |
+| `drawer_card.frag` | `drawer/Drawer.qml` (contracurva + contorno) | no |
+| `bar_edge.frag` | `bar/Bar.qml` (la otra mitad del contorno) | no |
 | `glow.frag` | `bar/Workspaces.qml` (workspace enfocado) | no |
 | `dissolve.frag` | `notifications/NotificationToast.qml` (entrada) | no, ~380ms |
 | `bar_sheen.frag` | `bar/Bar.qml` (aurora del fondo) | **si** |
@@ -152,6 +153,56 @@ Gotchas propios de esto:
   defecto); si esa property no existe, Qt crea una **dinamica**, que el
   ShaderEffect no mira nunca — el sampler queda vacio y la tarjeta sale
   en negro, sin ningun error en el log.
+- **`anchor.margins.top` de `PopupWindow` no se aplica.** Se puede
+  setear y leer (devuelve el valor), pero la superficie igual queda
+  pegada al filo de abajo del ANCLA. Como el pill flota unos px arriba
+  del filo de la barra, el drawer terminaba montado sobre los ultimos px
+  de la barra y su contracurva arrancaba ahi -- por eso los dos contornos
+  se veian corridos. Se compensa puertas adentro (`Drawer.barOverlap`
+  corre la tarjeta hacia abajo dentro de su propia superficie). Misma
+  familia que la nota vieja de margenes negativos: los margenes de
+  PopupWindow no son de fiar, medir siempre en pantalla.
+- **Dos trazos que se encuentran en una juntura tienen que estar los dos
+  del mismo lado del borde.** El contorno del drawer estaba centrado en
+  `d = 0` (mitad adentro, mitad afuera) y el de la barra vivia entero
+  dentro de su superficie: en el empalme se pisaban medio pixel corridos
+  y quedaba un escaloncito. Los dos hacia adentro y con la MISMA rampa de
+  antialias (1.0 px en los dos shaders) y el empalme cierra.
+- **`min()` de dos SDF miente sobre las junturas internas.** Es exacto
+  para el exterior de la union, pero sobre la costura donde se tocan dos
+  piezas devuelve ~0 aunque el punto este bien adentro. Si el contorno se
+  dibuja como banda alrededor de `d = 0`, esa costura se enciende y
+  aparece un trazo que no corresponde a ningun borde real -- en
+  `drawer_card.frag` era una linea vertical de mas, paralela al arco,
+  justo donde el filete se encuentra con el cuerpo. La solucion no es
+  tocar la banda sino **superponer las piezas**: se estira la caja del
+  filete hacia adentro del cuerpo, y como esa area ya estaba dentro del
+  cuerpo la silueta no cambia, pero la costura queda enterrada donde los
+  dos SDF son bien negativos. (Hacia abajo NO se puede estirar: ahi el
+  disco deja de tapar y salen pinches fuera de la silueta.)
+- **Para animar la SALIDA de algo que vive en un modelo, el id tiene que
+  quedarse en el modelo hasta que la animacion termine.** El `Repeater`
+  destruye el delegate en el mismo instante en que el elemento sale del
+  modelo, asi que "sacarlo y despues animar" no existe: ya no hay nada
+  que animar, desaparece de un frame al otro. El patron que si funciona
+  es una lista aparte de "salientes" (`NotificationState.exitingIds`): el
+  timer de expiracion MARCA, el delegate ve la marca y se disuelve, y
+  recien al terminar avisa (`exited`) para que el id salga del modelo de
+  verdad (`finishPopup`). Ojo con el que se cae por el tope de toasts
+  mientras estaba saliendo: su delegate ya no existe y nunca va a avisar,
+  hay que podar esa lista aparte.
+- **`MultiEffect` dibuja la FUENTE ademas del efecto, y corrida.** Con
+  `autoPaddingEnabled` (true por defecto) la copia sale desplazada ~21px.
+  Mientras la tarjeta del drawer fue un rectangulo liso no se noto nunca;
+  apenas tuvo contorno, la copia aparecio como un **doble borde
+  fantasma** (dos contornos anidados, cada uno con su contracurva). Si
+  aparece un duplicado espectral de algo, sospechar de esto antes que del
+  shader: para confirmarlo, cambiar el color del borde y ver si las DOS
+  lineas cambian (si cambian, las dibuja el mismo shader dos veces).
+  - De paso: la sombra de ese MultiEffect nunca se habia visto, porque el
+    popup mide exactamente lo que la tarjeta y el desenfoque caia fuera
+    de la superficie. Se saco el MultiEffect entero del `Drawer`: la
+    profundidad la dan el contorno y el blur del compositor.
 - **Una caida `exp()` no llega a cero nunca**, asi que un halo se corta
   con un escalon visible justo en el borde del item (se veia como un
   recuadro claro alrededor del workspace activo). Hay que multiplicarla
@@ -175,6 +226,54 @@ Gotchas propios de esto:
     capa quedaba para siempre en Uncompiled) aunque el componente real
     anda bien. Si algo no se ve en un mock, verificalo instanciando el
     componente de verdad antes de salir a buscar el bug en el shader.
+
+### El contorno que une barra y drawer
+
+Con un drawer abierto, barra y drawer comparten un unico contorno: entra
+por el filo de abajo de la barra, baja por la contracurva, rodea el
+drawer y vuelve a salir a la barra del otro lado. Es lo que hace que la
+contracurva se VEA -- con 16px y sin linea que la recorriera, la curva no
+se leia contra el fondo translucido (por eso ahora `wing` es 26 *y* hay
+contorno: una cosa sin la otra no alcanzaba).
+
+Son **dos superficies Wayland distintas** (layer-shell y xdg-popup), asi
+que el contorno son dos mitades dibujadas por dos shaders que se
+encuentran en la juntura. Lo que las mantiene alineadas:
+
+- **La barra tiene que saber donde cayo el popup, y `PopupWindow` no lo
+  dice**: `x`/`y` dan `undefined` y `anchor.rect` viene en cero
+  (verificado). Hay que predecirlo. La regla del compositor, medida en
+  pantalla con un popup magenta (ancla en x=1600 w=24, popup de 380 ->
+  ocupo 1422..1801), es **centrado en el ancla y despues acotado a la
+  pantalla** por `PopupAdjustment.Slide`. Eso es `Drawer.predictedX`.
+  Es a ciegas: si alguna vez el compositor lo ubica distinto, el contorno
+  se desalinea y no hay forma de que el shell se entere.
+- **La geometria viaja por `drawer/DrawerLink.qml`** (singleton), porque
+  las dos puntas estan en ramas distintas del arbol: el Drawer lo crea
+  cada modulo bien adentro, y quien dibuja la otra mitad es `Bar.qml`,
+  arriba de todo. `DrawerLink.window` desempata entre monitores.
+- **El drawer se abre desenrollandose hacia abajo, no escalando.** No es
+  solo estetica: con `scale` el ancho renderizado no coincide con el
+  logico, asi que el hueco de la barra bailaba durante toda la animacion.
+  Desenrollando (`reveal` mueve el alto de la tarjeta), el ancho es
+  constante desde el primer frame.
+- **La aurora de la barra sigue adentro del drawer.** Sin eso el drawer
+  es un plano liso pegado a una barra teñida y se lee como un recorte
+  aunque el contorno sea continuo. `drawer_card.frag` evalua la MISMA
+  onda que `bar_sheen.frag` en la MISMA coordenada absoluta (por eso le
+  llegan `sheenOriginX` y el ancho de la barra) y arranca en el valor con
+  el que la barra termina su gradiente vertical, disolviendose hacia
+  abajo. El tiempo sale de `theme/Sheen.qml`, singleton justamente para
+  que las dos superficies no lleven contadores distintos. Medido en la
+  juntura: ultima fila de la barra y primera del drawer dan el mismo RGB.
+- **El filo de arriba de la tarjeta no se puede enmascarar, hay que
+  cortarlo.** La forma se dibuja `overlap` px MAS ARRIBA del item y el
+  item la corta, asi adentro de lo que se ve no hay borde superior que
+  contornear. Apagar la banda con una mascara "y < k" no sirve: cerca de
+  la juntura el arco del filete es casi horizontal, y cualquier mascara
+  asi se come ~10px de arco y abre un agujero justo en el empalme. Como
+  el corte deja la tarjeta un poco mas angosta arriba que el popup,
+  `Drawer.topInset` calcula cuanto, y la barra cierra su hueco ahi.
 
 ### Real gotchas (not obvious from reading the code cold)
 
@@ -210,6 +309,46 @@ Gotchas propios de esto:
   content + a `MouseArea { anchors.fill: parent }` together inside a plain
   `Item`, and put `Layout.*` on that `Item`, not on the MouseArea or its
   siblings.
+- **`Pill.hovered` miente si el Pill no declara `hoverable: true`.** El
+  `MouseArea` de `Pill.qml` lleva `hoverEnabled: root.hoverable`, y
+  `hoverable` arranca en `false`: un Pill que solo pone `interactive:
+  true` recibe clicks perfectamente pero su `containsMouse` no se prende
+  NUNCA, asi que `hovered` queda clavado en false. No hay error de
+  ningun tipo — la property existe y devuelve un bool valido — asi que un
+  `Drawer { hoverOpen: true }` sobre semejante Pill carga limpio y
+  simplemente no abre jamas. Paso con Volume y WorkspaceLayout. Ahora lo
+  arma el propio Drawer (`armHoverSource()`), pero si aparece algo que
+  depende del hover de un Pill por fuera de esa via, es lo primero a
+  revisar. `IconButton` no tiene el problema: su MouseArea trackea
+  siempre (y por eso tampoco tiene `hoverable`, ojo al asignarla a
+  ciegas).
+  - **Un `Drawer` por hover con un control de ARRASTRE adentro necesita
+    `hoverHold`.** Mientras se arrastra, el MouseArea del control se
+    queda con el grab del puntero, asi que el mouse puede salir de la
+    superficie del popup sin soltar: `hovered` se cae y el drawer se
+    cierra en plena arrastrada. Se ata al `pressed` del control (ver
+    `Slider.pressed` <- `Volume.qml`).
+- **Para probar el hover con el cursor a mano, hay que ACERCARSE en
+  pasos.** Un warp de un solo salto hasta la barra mueve el puntero
+  (`hyprctl cursorpos` lo confirma) pero **no** dispara el hover: el
+  drawer no abre ni siquiera en modulos que andan bien, lo que hace
+  parecer que el bug esta en el modulo. Con varios `cursor.move`
+  intermedios (y ~250ms entre uno y otro) el enter llega y se puede
+  verificar de verdad. El dispatcher, con la config en Lua, es
+  `hyprctl repl 'hl.dispatch(hl.dsp.cursor.move({ x = N, y = N }))'` —
+  `hyprctl dispatch movecursor N N` no parsea, y llamar a
+  `hl.dsp.cursor.move(...)` sin `hl.dispatch()` alrededor devuelve el
+  dispatcher sin ejecutarlo (silencioso: parece que anduvo).
+- **Matar quickshell le regala las notificaciones a `mako`.** Esta
+  habilitado como servicio de usuario Y es dbus-activatable
+  (`fr.emersion.mako.service`), asi que agarra
+  `org.freedesktop.Notifications` apenas el shell suelta el nombre, y al
+  volver el shell ya no lo puede tomar (loguea "presumably because one
+  is already registered" y sigue andando sin notificaciones). Pasa en
+  CADA reinicio del shell. Chequear con
+  `busctl --user call org.freedesktop.DBus /org/freedesktop/DBus
+  org.freedesktop.DBus GetConnectionUnixProcessID s
+  org.freedesktop.Notifications` y comparar contra el pid del shell.
 - **`PopupWindow` with `grabFocus: true` silently fails to render** — no
   error, `visible` stays true internally, but no Wayland surface appears.
   Anything needing real keyboard focus (the launcher's search box) needs
@@ -380,6 +519,14 @@ valores validos son los de `general:layout` (`dwindle` / `master` /
     `lastIpcObject` y recalcula los bindings.
 
 ### Hyprland-side integration
+
+**`blur` solo no alcanza para los drawers: hace falta ademas
+`blur_popups = true`.** Los drawers son xdg-popups, no layer surfaces --
+ni siquiera figuran en `hyprctl layers`, ahi solo estan la barra y la
+ventana de toasts. Con `blur` a secas la barra quedaba esmerilada y los
+drawers translucidos pero SIN desenfocar, o sea que se leia el texto de
+la ventana de atras a traves del dashboard. Verificado prendiendo y
+apagando la linea en vivo.
 
 `hyprland-neo/workspaces/init.lua` has an `hl.layer_rule` for namespace
 `^quickshell$` with `blur = true` — this is what makes the bar and every

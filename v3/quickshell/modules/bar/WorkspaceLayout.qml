@@ -177,6 +177,15 @@ Pill {
         panelWindow: root.panelWindow
         uiScale: root.uiScale
         shown: root.expanded
+        // Se abre al pasar el mouse, igual que los applets de la derecha:
+        // el puente hover->expanded vive en Drawer.qml (ver `hoverOpen`).
+        hoverOpen: true
+        hoverSource: root
+        onOpenRequested: root.expanded = true
+        onCloseRequested: root.expanded = false
+        // ESC lo cierra sin mover el mouse. No se reabre solo: el puente
+        // de hover dispara por CAMBIO de estado, hay que salir y volver.
+        onEscapePressed: root.expanded = false
 
         ColumnLayout {
             // `width` explicito y no `Layout.preferredWidth`: el padre

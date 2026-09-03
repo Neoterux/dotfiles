@@ -21,6 +21,10 @@ Item {
     implicitWidth: 24 * uiScale
     implicitHeight: 24 * uiScale
 
+    // Lo usa el Drawer para abrirse por hover (ver `hoverSource` en
+    // drawer/Drawer.qml) -- el mismo contrato que ya exponia Pill.
+    readonly property bool hovered: mouseArea.containsMouse
+
     signal leftClicked
     signal rightClicked
 
