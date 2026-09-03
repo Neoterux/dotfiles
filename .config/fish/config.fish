@@ -88,3 +88,8 @@ set -x PKG_CONFIG_PATH $PKG_CONFIG_PATH "/usr/lib/pkgconfig" "/usr/share/pkgconf
 #    set -x (gnome-keyring-daemon --start | string split "=")
 #end
 set -x GCM_CREDENTIAL_STORE secretservice
+
+# optimization pass 2026-08-30: gcr-ssh-agent
+if test -z "$SSH_AUTH_SOCK"; and test -S "$XDG_RUNTIME_DIR/gcr/ssh"
+    set -gx SSH_AUTH_SOCK "$XDG_RUNTIME_DIR/gcr/ssh"
+end

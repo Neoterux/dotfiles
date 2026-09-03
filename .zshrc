@@ -153,3 +153,8 @@ alias alacrittyconf="vim $HOME/.config/alacritty/alacritty_def.yml"
 
 alias clear="clear && neofetch"
 alias cl="clear"
+
+# --- optimization pass 2026-08-30: single ssh-agent = gcr-ssh-agent ---
+if [ -z "$SSH_AUTH_SOCK" ] && [ -S "${XDG_RUNTIME_DIR:-/run/user/$UID}/gcr/ssh" ]; then
+  export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/gcr/ssh"
+fi

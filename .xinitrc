@@ -1,7 +1,7 @@
 #!/bin/sh
 
-[-f /etc/xprofile ] && . /etc/xprofile
-[-f ~/.xprofile ] && . ~/.xprofile
+[ -f /etc/xprofile ] && . /etc/xprofile
+[ -f ~/.xprofile ] && . ~/.xprofile
 
 ## Setup keyboard layout
 setxkbmap us intl-unicode &
