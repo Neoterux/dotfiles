@@ -1,3 +1,5 @@
+local XDG_RUNTIME_DIR = os.getenv('XDG_RUNTIME_DIR')
+
 local envs = {
     --[[
      Configuraciones de variables para XDG
@@ -21,6 +23,7 @@ local envs = {
 
     GDK_BACKEND = 'wayland,x11,*',
     SDL_VIDEODRIVER = 'wayland',
+    CLUTTER_BACKEND = 'wayland',
 
     --[[
         SSH agent: single owner is gcr-ssh-agent (unlocked by gnome-keyring at
@@ -29,6 +32,17 @@ local envs = {
         UID 1000 is fixed on this box; Hyprland does not expand $XDG_RUNTIME_DIR.
     ]]
     SSH_AUTH_SOCK = '/run/user/1000/gcr/ssh',
+
+    --[[
+      GNOME Keyring (Secret Service para Bitwarden). En esta version
+      (50.0) gnome-keyring-daemon YA NO soporta un componente "ssh"
+      (--help solo lista pkcs11,secrets) -- el agente SSH lo sigue
+      dando gcr-ssh-agent (paquete gcr), que ya exporta su propio
+      SSH_AUTH_SOCK via systemd --user, asi que no se pisa aca.
+      gnome-keyring-daemon siempre crea sus sockets en
+      $XDG_RUNTIME_DIR/keyring.
+    ]]
+    GNOME_KEYRING_CONTROL = XDG_RUNTIME_DIR .. '/keyring',
 
     --[[
         Electron / Firefox / JetBrains on wlroots

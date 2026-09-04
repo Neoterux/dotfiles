@@ -24,6 +24,13 @@ local session_bootstrap = {
 local commands = {
     "quickshell",
     "hyprpaper",
+    -- GNOME Keyring: Secret Service para Bitwarden (el agente SSH lo
+    -- sigue dando gcr-ssh-agent por separado -- gnome-keyring 50.0 ya
+    -- no trae componente "ssh"). Sin --unlock: se deja bloqueado hasta
+    -- el primer pedido de un secreto (dispara el prompt grafico de gcr)
+    -- o desbloqueo manual en Seahorse -- autologin es sin password, asi
+    -- que no hay forma de derivar la clave de desbloqueo automaticamente.
+    "gnome-keyring-daemon --start --components=pkcs11,secrets --daemonize",
     "wl-paste --type text --watch cliphist store",  -- Stores only text data
     "wl-paste --type image --watch cliphist store", -- Stores only image data
 }
