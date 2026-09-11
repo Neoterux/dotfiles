@@ -51,14 +51,29 @@ Pill {
         }
     }
 
+    // `brightnessctl` y no `light`: light NO esta en los repos de Arch
+    // (solo AUR), asi que pedirlo en el setup hacia fallar la transaccion
+    // entera de pacman -- "target not found: light" y no se instalaba
+    // NADA, ni los otros paquetes de la misma linea. brightnessctl esta
+    // en `extra` y hace lo mismo.
+    //
+    // No necesita root: sus reglas de udev le dan acceso al grupo
+    // `video`. Si algun dia sube/baja "sin efecto y sin error", chequear
+    // `id -nG | grep video` antes que nada.
+    //
+    // Solo se usa para SUBIR/BAJAR. La lectura sigue saliendo directo de
+    // /sys (readProc), asi que el modulo muestra el porcentaje correcto
+    // aunque el brillo lo cambie otra cosa.
     Process {
         id: raiseProc
-        command: ["light", "-A", "5"]
+        command: ["brightnessctl", "set", "+5%"]
     }
 
     Process {
         id: lowerProc
-        command: ["light", "-U", "5"]
+        // `5%-` (y no `-5%`): con el guion adelante brightnessctl lo toma
+        // como una opcion y tira error de parseo.
+        command: ["brightnessctl", "set", "5%-"]
     }
 
     Timer {

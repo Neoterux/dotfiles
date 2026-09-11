@@ -44,10 +44,17 @@ QtObject {
         if (/(^|&)path=/.test(query))
             return true;
 
-        if (Quickshell.hasThemeIcon(name))
+        // `name` vacio se chequea aparte: `hasThemeIcon("")` devuelve
+        // TRUE (verificado en vivo), asi que sin este `name &&` una URL
+        // tipo `image://icon/?fallback=algo` pasaba como usable y
+        // terminaba pidiendole a Qt un icono sin nombre.
+        if (name && Quickshell.hasThemeIcon(name))
             return true;
 
         const fallback = /(^|&)fallback=([^&]*)/.exec(query);
-        return fallback ? Quickshell.hasThemeIcon(decodeURIComponent(fallback[2])) : false;
+        if (!fallback)
+            return false;
+        const fb = decodeURIComponent(fallback[2]);
+        return !!fb && Quickshell.hasThemeIcon(fb);
     }
 }

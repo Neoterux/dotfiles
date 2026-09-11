@@ -93,6 +93,33 @@ ColumnLayout {
                 id: appDelegate
                 required property var modelData
 
+                // Mismo criterio que Workspaces/WorkspacesTab/TrayIcons:
+                // validar el nombre ANTES de armar el source, porque
+                // `image://icon/` nunca falla -- devuelve el cuadriculado
+                // "imagen rota" con status Ready.
+                //
+                // Con dos vueltas de tuerca que el resto del repo no
+                // tenia que dar:
+                //
+                //  1. `hasThemeIcon("")` devuelve TRUE (verificado). O
+                //     sea que la guarda de siempre deja pasar el nombre
+                //     vacio, y salia un `image://icon/?fallback=...` que
+                //     Qt loguea como "Could not load icon". Por eso el
+                //     `!!name` explicito antes del chequeo.
+                //  2. El fallback tambien hay que validarlo: en este
+                //     equipo `application-x-executable` tampoco resolvia
+                //     (ver la nota de QT_QPA_PLATFORMTHEME en
+                //     hyprland-neo/env/init.lua). Pedirlo a ciegas era
+                //     cambiar un warning por otro.
+                readonly property string resolvedIcon: {
+                    const name = appDelegate.modelData.icon;
+                    if (name && Quickshell.hasThemeIcon(name))
+                        return Quickshell.iconPath(name);
+                    if (Quickshell.hasThemeIcon("application-x-executable"))
+                        return Quickshell.iconPath("application-x-executable");
+                    return "";
+                }
+
                 Layout.preferredWidth: 80 * root.uiScale
                 implicitHeight: col.implicitHeight
 
@@ -104,7 +131,8 @@ ColumnLayout {
                     IconImage {
                         Layout.alignment: Qt.AlignHCenter
                         implicitSize: 42 * root.uiScale
-                        source: Quickshell.iconPath(appDelegate.modelData.icon, "application-x-executable")
+                        source: appDelegate.resolvedIcon
+                        visible: source !== ""
                     }
 
                     Text {
