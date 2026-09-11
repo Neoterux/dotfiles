@@ -1,0 +1,122 @@
+/**
+ * Tema de rofi a juego con la barra de Quickshell.
+ *
+ * La referencia visual es `drawer/Drawer.qml`: fondo oscuro MUY
+ * translucido sobre el blur que le pone Hyprland (layer_rule
+ * "glass-rofi" en hyprland-neo/workspaces/init.lua), contorno fino en
+ * `accent` y esquinas redondeadas grandes.
+ *
+ * El alpha del fondo es 0.78, el MISMO que usa la tarjeta del drawer
+ * (`fill` en Drawer.qml). Se probo con 0.55 y se ve precioso sobre un
+ * fondo oscuro, pero sobre una ventana clara (una pagina web blanca) la
+ * tarjeta queda gris medio y el texto crema #ebdbb2 encima pierde casi
+ * todo el contraste -- verificado en pantalla. 0.78 sigue dejando pasar
+ * el blur y aguanta cualquier cosa que haya detras.
+ *
+ * El inputbar imita a Spotlight de macOS: una franja alta SIN caja
+ * propia -- nada de recuadro dentro del recuadro -- con la lupa grande a
+ * la izquierda, tipografia bien mayor que la de los resultados, y un
+ * separador de 1px que la despega de la lista.
+ */
+@import "colors.rasi"
+
+* {
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    transparency:     "real";
+    location:         center;
+    anchor:           center;
+    y-offset:         -8%;
+    width:            720px;
+    border:           1.2px;
+    border-color:     @accent;
+    border-radius:    20px;
+    background-color: rgba(22, 19, 32, 0.78);
+    padding:          0px;
+    children:         [ mainbox ];
+}
+
+mainbox {
+    padding:  0px;
+    spacing:  0px;
+    children: [ inputbar, listview ];
+}
+
+/* --- Franja tipo Spotlight ------------------------------------------ */
+inputbar {
+    spacing:          16px;
+    padding:          20px 24px;
+    background-color: transparent;
+    children:         [ prompt, entry ];
+}
+
+/* La lupa. `expand: false` para que no se coma el ancho y empuje al
+   entry: sin eso el cursor de texto arranca a mitad de la franja. */
+prompt {
+    enabled:        true;
+    expand:         false;
+    text-color:     @accent;
+    font:           "JetBrainsMono Nerd Font 20";
+    vertical-align: 0.5;
+    /* El glifo NO se pone aca: `display-drun`/`display-run`/`display-window`
+       de config.rasi mandan sobre cualquier `str:` del tema (verificado --
+       con `str` puesto igual salia el glifo de display-drun). */
+}
+
+entry {
+    font:              "JetBrainsMono Nerd Font 20";
+    placeholder:       "Buscar";
+    placeholder-color: @fg-dim;
+    text-color:        @fg;
+    background-color:  transparent;
+    cursor:            text;
+    vertical-align:    0.5;
+}
+
+/* Hilo que separa la franja de los resultados, como el de Spotlight. */
+listview {
+    columns:      1;
+    lines:        8;
+    fixed-height: false;
+    scrollbar:    false;
+    spacing:      2px;
+    padding:      10px 12px 14px 12px;
+    dynamic:      true;
+    border:       1px 0px 0px 0px;
+    border-color: rgba(235, 219, 178, 0.12);
+}
+
+element {
+    padding:       9px 12px;
+    spacing:       12px;
+    border-radius: 10px;
+    cursor:        pointer;
+}
+
+element normal.normal    { text-color: @fg;     background-color: transparent; }
+element alternate.normal { text-color: @fg;     background-color: transparent; }
+element normal.urgent    { text-color: @urgent; background-color: transparent; }
+element normal.active    { text-color: @active; background-color: transparent; }
+
+/* Mismo contraste que el workspace activo de la barra: relleno lleno y
+   texto oscuro encima, no un simple resaltado. */
+element selected.normal {
+    text-color:       @bg;
+    background-color: @accent;
+}
+element selected.urgent { text-color: @bg; background-color: @urgent; }
+element selected.active { text-color: @bg; background-color: @active; }
+
+element-icon {
+    size:           26px;
+    cursor:         inherit;
+    vertical-align: 0.5;
+}
+
+element-text {
+    text-color:     inherit;
+    cursor:         inherit;
+    vertical-align: 0.5;
+}

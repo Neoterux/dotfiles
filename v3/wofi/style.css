@@ -1,0 +1,97 @@
+/*
+ * wofi a juego con la barra de Quickshell (ver quickshell/theme/Colors.qml)
+ * y con rofi/theme.rasi. Es GTK CSS, no rasi: no hay variables propias ni
+ * @import, por eso los colores van escritos a mano y hay que
+ * sincronizarlos con colors.rasi a mano tambien.
+ *
+ * El fondo va translucido (0.78, el mismo que la tarjeta del drawer)
+ * porque Hyprland le pone blur por detras (layer_rule "glass-wofi" en
+ * hyprland-neo/workspaces/init.lua). Sin ese rule hay que subirlo mas o
+ * el texto queda ilegible. Bajarlo a 0.55 se ve mejor sobre fondo oscuro
+ * pero se vuelve ilegible sobre una ventana clara.
+ *
+ * Input estilo Spotlight de macOS: franja alta, SIN caja propia (nada de
+ * recuadro adentro del recuadro), tipografia grande, y un hilo de 1px
+ * separandola de los resultados.
+ */
+
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 13px;
+}
+
+/* #window transparente: el redondeo y el color viven en #outer-box, si no
+   se ve un rectangulo opaco asomando por detras de las esquinas. */
+#window {
+    background-color: transparent;
+}
+
+#outer-box {
+    background-color: rgba(22, 19, 32, 0.78);
+    border: 1.2px solid #fe8019;
+    border-radius: 20px;
+    padding: 0px;
+}
+
+/* La franja Spotlight. `border-bottom` hace de separador con la lista. */
+#input {
+    font-size: 20px;
+    background-color: transparent;
+    background-image: none;
+    color: #ebdbb2;
+    border: none;
+    border-bottom: 1px solid rgba(235, 219, 178, 0.12);
+    border-radius: 0px;
+    padding: 20px 24px;
+    margin: 0px;
+    outline: none;
+    box-shadow: none;
+    caret-color: #fe8019;
+}
+
+#input:focus {
+    border: none;
+    border-bottom: 1px solid rgba(235, 219, 178, 0.12);
+    box-shadow: none;
+    outline: none;
+}
+
+/* La lupa que GTK dibuja dentro del GtkSearchEntry. */
+#input image {
+    color: #fe8019;
+    -gtk-icon-transform: scale(1.25);
+}
+
+#scroll {
+    margin: 0px;
+    padding: 10px 12px 14px 12px;
+}
+
+#inner-box {
+    background-color: transparent;
+}
+
+#entry {
+    padding: 9px 12px;
+    border-radius: 10px;
+    color: #ebdbb2;
+}
+
+/* Mismo par que la fila seleccionada de rofi y que el workspace activo
+   de la barra: relleno lleno + texto oscuro. */
+#entry:selected {
+    background-color: #fe8019;
+    color: #161320;
+}
+
+#entry:selected #text {
+    color: #161320;
+}
+
+#text {
+    color: #ebdbb2;
+}
+
+#text:selected {
+    color: #161320;
+}

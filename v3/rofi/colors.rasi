@@ -1,0 +1,18 @@
+/**
+ * Paleta gruvbox del rice -- ESPEJO de quickshell/theme/Colors.qml.
+ * Si cambia un color alla, cambialo aca: son dos procesos distintos, no
+ * hay forma de compartir el singleton.
+ */
+* {
+    bg:          #161320;
+    bg-alt:      #11111b;
+    fg:          #ebdbb2;
+    fg-dim:      #7c6f64;
+    accent:      #fe8019;
+    urgent:      #fb4934;
+    active:      #8ec07c;
+    surface:     #3c3836;
+
+    background-color: transparent;
+    text-color:       @fg;
+}

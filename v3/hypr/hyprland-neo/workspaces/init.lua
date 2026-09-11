@@ -29,6 +29,48 @@ function M.setup()
         ignore_alpha = 0.05,
     })
 
+    -- Mismo vidrio para los dos lanzadores. Son layer surfaces con
+    -- namespace propio (verificado con `hyprctl layers` con cada uno
+    -- abierto: `rofi` cae en el nivel `overlay`, `wofi` en `top`), asi
+    -- que la regla de quickshell no los alcanza y necesitan la suya.
+    --
+    -- Aca NO hace falta `blur_popups`: a diferencia de los drawers de la
+    -- barra, rofi y wofi dibujan todo dentro de su propia layer surface,
+    -- no abren xdg-popups.
+    --
+    -- Sin esto, bajarles el alpha al fondo (ver rofi/theme.rasi y
+    -- wofi/style.css) solo deja ver el escritorio nitido a traves de la
+    -- tarjeta, que se lee como "translucido y sucio" en vez de vidrio:
+    -- justamente lo que la nota de arriba describe para Quickshell.
+    -- `animation = "popin 0%"`: los lanzadores se ABREN desenrollandose
+    -- desde el centro en vez de aparecer con el `fade` que usan todas las
+    -- layers por defecto (ver `layersIn` en lookandfeel/init.lua). Como
+    -- los dos estan centrados en pantalla, el punto del que crecen ES el
+    -- centro de la pantalla.
+    --
+    -- OJO con el alcance de esto: "popin" escala la tarjeta ENTERA de
+    -- forma isotropica. Una linea fina que se estira hacia los costados y
+    -- recien despues se abre en tarjeta necesitaria escalar cada eje por
+    -- separado, y los estilos de animacion de layers de Hyprland
+    -- (`fade` / `slide` / `popin`) no exponen eso -- no hay como pedirlo
+    -- desde la config. Lo mas cerca que se llega sin escribir un plugin
+    -- es esto.
+    hl.layer_rule({
+        name = "glass-rofi",
+        match = { namespace = "^rofi$" },
+        blur = true,
+        ignore_alpha = 0.05,
+        animation = "popin 0%",
+    })
+
+    hl.layer_rule({
+        name = "glass-wofi",
+        match = { namespace = "^wofi$" },
+        blur = true,
+        ignore_alpha = 0.05,
+        animation = "popin 0%",
+    })
+
     hl.window_rule({
         name = "suppress-maximize-firefox",
         match = { class = "^(firefox)$" },
@@ -59,6 +101,26 @@ function M.setup()
         name = "float-opencv-viewer",
         match = { title = "^(OpenCV Viewer)(.*)$" },
         float = true,
+    })
+
+    -- El dialogo de archivos (el que abre Firefox con Ctrl+O, zenity, y en
+    -- general cualquier app que pase por el portal) sale TILEADO: se comia
+    -- media pantalla y reacomodaba el workspace entero por un dialogo que se
+    -- usa 3 segundos y se cierra. Es un modal, se trata como tal.
+    --
+    -- El class correcto es "xdg-desktop-portal-gtk", NO "zenity" ni el de la
+    -- app que lo pidio: verificado en vivo con `hyprctl clients` mientras el
+    -- dialogo estaba abierto -- el que dibuja la ventana es el proceso del
+    -- portal, asi que una sola regla cubre a todos los que lo usan.
+    --
+    -- Mismo truco que satty para el tamaño: el API Lua ignora porcentajes en
+    -- silencio, pero si evalua expresiones con monitor_w/monitor_h.
+    hl.window_rule({
+        name = "float-file-chooser",
+        match = { class = "^(xdg-desktop-portal-gtk)$" },
+        float = true,
+        center = true,
+        size = "monitor_w*0.6 monitor_h*0.7",
     })
 
     -- Satty (el anotador de capturas que abre el bind de screenshot con

@@ -1,0 +1,45 @@
+/**
+ * Config minima de rofi para este rice.
+ *
+ * Reemplaza al pack de adi1090x que vivia suelto en ~/.config/rofi (esta
+ * guardado al lado como `rofi.adi1090x.bak`). Ese pack traia siete
+ * "launchers" y sus scripts, pero los binds del repo llaman a `rofi
+ * -show drun` pelado -- o sea que nada de eso se estaba usando y rofi
+ * salia con el look de fabrica.
+ *
+ * La lupa del prompt usa U+F0349 (nf-md-magnify) y NO U+F002
+ * (nf-fa-search), que es el codepoint "obvio". Motivo: U+F002 cae en el
+ * PUA basico, que 60 familias instaladas en este equipo reclaman --
+ * incluidas tipografias de texto normales como Arimo -- asi que
+ * fontconfig elegia una de esas y la lupa salia dibujada como una "C".
+ * Verificado: `pango-view --font="JetBrainsMono Nerd Font"` con el mismo
+ * codepoint SI dibuja la lupa, o sea que el glifo estaba en la fuente y
+ * el problema era la sustitucion. U+F0349 vive en el PUA suplementario
+ * (plano 15), que casi solo reclaman las Nerd Fonts (41 familias, todas
+ * Nerd salvo una), asi que no hay a quien sustituir.
+ *
+ * `icon-theme` apunta a Adwaita y no a "Papirus" como antes: Papirus no
+ * esta instalado en este equipo, asi que los iconos caian al placeholder.
+ */
+configuration {
+    modi:                "drun,run,window";
+    show-icons:          true;
+    icon-theme:          "Adwaita";
+    terminal:            "kitty";
+
+    display-drun:        "󰍉";
+    display-run:         "";
+    display-window:      "";
+
+    drun-display-format: "{name}";
+    drun-match-fields:   "name,generic,exec,categories,keywords";
+    matching:            "fuzzy";
+    sort:                true;
+    case-sensitive:      false;
+    cycle:               true;
+    hover-select:        true;
+    me-select-entry:     "";
+    me-accept-entry:     "MousePrimary";
+}
+
+@theme "theme"

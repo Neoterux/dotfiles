@@ -1,0 +1,23 @@
+# wofi -- se usa SOLO para el selector de portapapeles (cliphist), ver
+# hyprland-neo/binds/init.lua. Por eso arranca en modo dmenu y no drun.
+#
+# OJO: al momento de escribir esto `cliphist` NO esta instalado en este
+# equipo, asi que ese bind falla con "command not found". El estilo de
+# aca igual sirve para cualquier otro `wofi --dmenu`.
+show=dmenu
+prompt=Buscar
+width=720
+height=480
+lines=8
+location=center
+# Sin `yoffset`: en wofi NO es un desplazamiento relativo al centro como
+# el `y-offset` de rofi -- con -80 la ventana terminaba con su borde
+# superior en y=-50 (verificado con `hyprctl layers`), o sea la franja
+# del input entera fuera de pantalla y la tarjeta cortada arriba.
+orientation=vertical
+insensitive=true
+allow_markup=false
+allow_images=false
+no_actions=true
+gtk_dark=true
+key_expand=Tab
