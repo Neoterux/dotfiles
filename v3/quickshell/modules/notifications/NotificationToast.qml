@@ -19,12 +19,23 @@ Rectangle {
     required property var notification
     property bool isPopupContext: true
 
-    readonly property color urgencyColor: notification.urgency === NotificationUrgency.Critical ? Colors.network : (notification.urgency === NotificationUrgency.Low ? Colors.fg : Colors.accent)
+    // `notification` puede ser null y no es un caso raro: el toast la
+    // busca por id (findTracked) y el objeto se destruye antes de que su
+    // id salga de `popupIds`. Sin guardas, cada destruccion deja una
+    // andanada de "TypeError: Cannot read property of null" en el log --
+    // y en un borrado masivo eso es escribir al log dentro del bucle
+    // caliente. `visible: !!notification` ya evitaba VERLA rota, pero no
+    // evitaba EVALUAR los bindings.
+    readonly property bool valid: !!notification
+
+    readonly property color urgencyColor: !root.valid ? Colors.accent : (notification.urgency === NotificationUrgency.Critical ? Colors.network : (notification.urgency === NotificationUrgency.Low ? Colors.fg : Colors.accent))
 
     // Icono: mismo criterio que el resto del repo (ver CLAUDE.md) --
     // `hasThemeIcon` ANTES de armar el source, `notification.image` (si
     // vino) tiene prioridad sobre el nombre de icono de la app.
     readonly property string resolvedIconSource: {
+        if (!root.valid)
+            return "";
         if (notification.image)
             return notification.image;
         const n = notification.appIcon;
@@ -38,7 +49,7 @@ Rectangle {
     // accion con texto vacio/no pensado para mostrarse, y se ve como un
     // chip vacio sin texto -- confirmado en vivo con la notificacion real
     // "Claude is waiting for your input".
-    readonly property var visibleActions: notification.actions.filter(a => a.identifier !== "default" && a.text !== "")
+    readonly property var visibleActions: !root.valid ? [] : notification.actions.filter(a => a.identifier !== "default" && a.text !== "")
 
     signal closeRequested
 
@@ -159,7 +170,7 @@ Rectangle {
                 Text {
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0
-                    text: root.notification.summary
+                    text: root.valid ? root.notification.summary : ""
                     color: Colors.fg
                     font.family: Colors.fontFamily
                     font.pixelSize: 13 * root.uiScale
@@ -168,8 +179,8 @@ Rectangle {
                 }
 
                 Text {
-                    visible: root.notification.appName !== ""
-                    text: root.notification.appName
+                    visible: root.valid && root.notification.appName !== ""
+                    text: root.valid ? root.notification.appName : ""
                     color: Colors.fg
                     opacity: 0.5
                     font.family: Colors.fontFamily
@@ -194,9 +205,9 @@ Rectangle {
         }
 
         Text {
-            visible: root.notification.body !== ""
+            visible: root.valid && root.notification.body !== ""
             Layout.fillWidth: true
-            text: root.notification.body
+            text: root.valid ? root.notification.body : ""
             textFormat: Text.StyledText
             color: Colors.fg
             opacity: 0.8

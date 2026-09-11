@@ -21,8 +21,38 @@ local session_bootstrap = {
     "systemctl --user start hyprpolkitagent.service",
 }
 
+-- Quickshell se lanza con su propio entorno, NO por hyprland-neo/env: esas
+-- variables aplican a TODA la sesion y estas dos solo tienen sentido para
+-- este proceso.
+--
+-- HONESTIDAD SOBRE EL AHORRO: no esta demostrado. Una primera medicion
+-- de una sola corrida dio -36 MB, pero repitiendo el A/B tres veces por
+-- rama los numeros quedaron asi (RSS a los 15s):
+--   sin env: 454 / 462 / 458 MB
+--   con env: 452 / 454 / 481 MB
+-- O sea que la varianza entre arranques (+-35 MB, segun cuantos iconos de
+-- bandeja alcanzaron a conectarse y que ventanas hay abiertas) se come
+-- cualquier efecto de este tamaño. Se dejan puestas porque el
+-- razonamiento es solido y no cuestan nada, NO porque se haya visto el
+-- ahorro. Si alguna vez molestan, sacarlas sin culpa.
+--
+-- Moraleja para la proxima vez que se optimice memoria aca: medir dentro
+-- de UN proceso (antes/despues de una accion), nunca comparando dos
+-- arranques.
+--
+--  * MALLOC_ARENA_MAX: glibc abre hasta 8*nucleos arenas de malloc y el
+--    shell corre ~30 hilos, asi que se fragmentaba en decenas de arenas
+--    que nunca devolvian memoria. Con 2 alcanza de sobra: el trabajo
+--    pesado es de un solo hilo (el de QML).
+--  * QSG_ATLAS_*: el atlas de texturas de Qt Quick arranca en 2048x2048
+--    RGBA = 16 MB por ventana. Los iconos de la barra son de 16-42 px y
+--    entran de sobra en 512x512 (1 MB). Si alguna vez se mete una imagen
+--    grande en la barra y se ve borrosa o se pierde, subir esto es lo
+--    primero a probar.
+local quickshell_env = "MALLOC_ARENA_MAX=2 QSG_ATLAS_WIDTH=512 QSG_ATLAS_HEIGHT=512"
+
 local commands = {
-    "quickshell",
+    "env " .. quickshell_env .. " quickshell",
     "hyprpaper",
     -- GNOME Keyring: Secret Service para Bitwarden (el agente SSH lo
     -- sigue dando gcr-ssh-agent por separado -- gnome-keyring 50.0 ya

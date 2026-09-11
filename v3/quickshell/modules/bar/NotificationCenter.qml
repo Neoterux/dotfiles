@@ -14,7 +14,10 @@ IconButton {
     required property var panelWindow
     property bool expanded: false
 
-    readonly property int count: NotificationState.server.trackedNotifications.values.length
+    // Via `NotificationState.count` y no `trackedNotifications.values`
+    // directo: ese atajo se saltearia la traba de `suspended` y volveria
+    // a hacer trabajo por cada dismiss() de "limpiar todo".
+    readonly property int count: NotificationState.count
 
     // Tope de alto para la lista del historial, relativo a la pantalla de
     // esta barra y no un numero fijo (el shell corre en monitores de altos
@@ -59,6 +62,7 @@ IconButton {
     }
 
     Drawer {
+        id: notifDrawer
         anchorItem: root
         panelWindow: root.panelWindow
         uiScale: root.uiScale
@@ -182,7 +186,25 @@ IconButton {
                         spacing: 6 * root.uiScale
 
                         Repeater {
-                            model: NotificationState.server.trackedNotifications.values
+                            // Atado a `visible` del drawer, no a
+                            // `root.expanded`: `visible` se queda en true
+                            // mientras corre la animacion de cierre, asi
+                            // que la lista no se evapora a mitad del
+                            // enrollado.
+                            //
+                            // Un PopupWindow oculto igual instancia a sus
+                            // hijos, asi que sin esta compuerta el
+                            // historial entero vivia desde el arranque del
+                            // shell y para siempre -- y por dos, porque
+                            // Bar.qml (y con el este modulo) se instancia
+                            // una vez por monitor. Ahora se paga al abrir.
+                            //
+                            // Y como `history` solo se lee cuando el
+                            // drawer esta a la vista, con el cerrado ni
+                            // siquiera es dependencia del binding: las
+                            // notificaciones que entran no reconstruyen
+                            // nada.
+                            model: notifDrawer.visible ? NotificationState.history : []
 
                             delegate: NotificationToast {
                                 required property var modelData

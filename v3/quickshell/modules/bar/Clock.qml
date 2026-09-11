@@ -66,6 +66,59 @@ Pill {
         // asi que hay que salir y volver a entrar.
         onEscapePressed: root.expanded = false
 
-        Dashboard { uiScale: root.uiScale }
+        // El Dashboard NO se instancia hasta que el drawer se ve por
+        // primera vez. Un PopupWindow oculto igual construye a sus hijos,
+        // asi que antes las 5 tabs (su barra, el Loader de pagina y la
+        // pagina activa con sus FileView/Timer) vivian desde el arranque
+        // del shell y para siempre -- y por DOS, porque Bar.qml se
+        // instancia una vez por monitor.
+        //
+        // Cuanto ahorra, medido en serio: ~12 MB. Y OJO con como se mide,
+        // porque el primer numero que saque para esto (29 MB) era ruido.
+        //
+        // Comparar el RSS de DOS arranques distintos no sirve: entre
+        // corridas de la MISMA config el RSS varia +-35 MB (los iconos de
+        // bandeja que alcanzaron a conectarse por SNI, las ventanas
+        // abiertas en cada workspace, cuando asigna Mesa). Con n=3 eager
+        // vs lazy los rangos se pisan enteros y no se puede concluir nada.
+        //
+        // Lo que si mide: un solo proceso, cuatro tomas.
+        //   reposo, sin abrirlo nunca ... 471 MB
+        //   dashboard abierto ........... 483 MB   (+12)
+        //   cerrado, retain corriendo ... 469 MB
+        //   retain vencido .............. 467 MB   (vuelve por debajo)
+        // O sea: cuesta ~12 MB mientras existe y esos 12 MB SE DEVUELVEN.
+        //
+        // Para perspectiva: el piso de Qt6+Mesa en este equipo es ~305 MB
+        // (medido con un shell de dos PanelWindow y un Text). Nada de lo
+        // que se haga en QML lo baja.
+        //
+        // `dashRetain` es para que no se reconstruya en cada hover: al
+        // cerrar se mantiene vivo 20s mas, asi abrir/cerrar/abrir no paga
+        // la construccion tres veces. Pasados los 20s se libera de verdad.
+        // Un Timer no es Item, asi que no entra en `childrenRect` y no
+        // afecta el tamaño del popup.
+        Timer {
+            id: dashRetain
+            interval: 20000
+            repeat: false
+        }
+
+        onVisibleChanged: {
+            if (dashPopup.visible)
+                dashRetain.stop();
+            else
+                dashRetain.restart();
+        }
+
+        Loader {
+            active: dashPopup.visible || dashRetain.running
+            // `Dashboard` adentro de un Component: sin esto el objeto se
+            // crearia igual al cargar el QML y el Loader no serviria de
+            // nada.
+            sourceComponent: Component {
+                Dashboard { uiScale: root.uiScale }
+            }
+        }
     }
 }
