@@ -1,0 +1,354 @@
+/*
+ * Tinte gruvbox sobre el Adwaita-dark de fabrica.
+ *
+ * Los colores NO son inventados: salen de los configs que ya existen --
+ * hypr/hyprland-neo/lookandfeel/init.lua (background_color 0x1d2021,
+ * col.splash 0x665c54, borde activo ebdbb2 -> d65d0e) y
+ * quickshell/theme/Colors.qml (fg #ebdbb2, accent #fe8019, status*).
+ *
+ * El CSS de usuario se carga con GTK_STYLE_PROVIDER_PRIORITY_USER (800),
+ * muy por encima del tema (200), asi que estos @define-color pisan a los
+ * de Adwaita.
+ *
+ * OJO: el Adwaita de GTK3 viene compilado de SCSS y tiene bastantes tonos
+ * derivados hardcodeados. Esto deja el dialogo oscuro y con acento naranja,
+ * pero no es un rice gruvbox pixel-perfect. Para eso haria falta un tema
+ * completo (AUR Gruvbox-GTK-Theme), que se descarto a proposito.
+ * GTK4/libadwaita (ver ../gtk-4.0/gtk.css) si respeta bien los overrides.
+ */
+
+/* --- paleta gruvbox --------------------------------------------------- */
+@define-color gruv_bg0_h #1d2021;   /* fondo de ventana */
+@define-color gruv_bg0   #282828;   /* base / listas */
+@define-color gruv_bg1   #3c3836;   /* superficies elevadas */
+@define-color gruv_bg2   #504945;   /* bordes */
+@define-color gruv_bg3   #665c54;   /* texto apagado */
+@define-color gruv_fg    #ebdbb2;
+@define-color gruv_fg0   #fbf1c7;
+@define-color gruv_orange       #fe8019;
+@define-color gruv_orange_dark  #d65d0e;
+@define-color gruv_red   #fb4934;
+@define-color gruv_yellow #fabd2f;
+@define-color gruv_green #b8bb26;
+@define-color gruv_aqua  #8ec07c;
+
+/* --- nombres que consume Adwaita -------------------------------------- */
+@define-color theme_bg_color   @gruv_bg0_h;
+@define-color theme_base_color @gruv_bg0;
+@define-color theme_fg_color   @gruv_fg;
+@define-color theme_text_color @gruv_fg;
+
+@define-color theme_selected_bg_color @gruv_orange;
+@define-color theme_selected_fg_color @gruv_bg0_h;
+
+@define-color insensitive_bg_color   @gruv_bg0_h;
+@define-color insensitive_fg_color   @gruv_bg3;
+@define-color insensitive_base_color @gruv_bg0;
+
+@define-color theme_unfocused_bg_color   @gruv_bg0_h;
+@define-color theme_unfocused_base_color @gruv_bg0;
+@define-color theme_unfocused_fg_color   @gruv_fg;
+@define-color theme_unfocused_text_color @gruv_fg;
+@define-color theme_unfocused_selected_bg_color @gruv_orange_dark;
+@define-color theme_unfocused_selected_fg_color @gruv_bg0_h;
+
+@define-color borders           @gruv_bg2;
+@define-color unfocused_borders @gruv_bg2;
+
+@define-color warning_color @gruv_yellow;
+@define-color error_color   @gruv_red;
+@define-color success_color @gruv_green;
+@define-color link_color    @gruv_aqua;
+
+@define-color content_view_bg @gruv_bg0;
+@define-color text_view_bg    @gruv_bg0;
+
+/* barra de titulo: mismo tono elevado, borde gruvbox */
+@define-color headerbar_bg_color @gruv_bg0;
+@define-color wm_bg              @gruv_bg0;
+@define-color wm_title           @gruv_fg0;
+@define-color wm_unfocused_title @gruv_bg3;
+@define-color wm_border          @gruv_bg2;
+@define-color wm_highlight       @gruv_bg2;
+
+/* --- el dialogo de archivos en si ------------------------------------- */
+/* Es lo que se estaba arreglando: la lista de archivos va al fondo de
+ * ventana y el sidebar de lugares un paso mas claro, para que se lean como
+ * dos superficies y no como un bloque plano. */
+filechooser,
+filechooser stack.view,
+filechooser .view {
+  background-color: @gruv_bg0_h;
+  color: @gruv_fg;
+}
+
+filechooser placessidebar,
+filechooser placessidebar list,
+placessidebar list {
+  background-color: @gruv_bg0;
+}
+
+filechooser placessidebar row:selected,
+placessidebar row:selected {
+  background-color: @gruv_orange;
+  color: @gruv_bg0_h;
+}
+
+/* La entrada de texto para escribir rutas (location-mode=filename-entry).
+ * Que se note que es escribible, en vez de fundirse con la cabecera. */
+filechooser #pathbarbox,
+filechooser .path-bar,
+filechooser pathbar {
+  background-color: @gruv_bg0;
+  border-color: @gruv_bg2;
+}
+
+filechooser entry,
+filechooser entry:focus {
+  background-color: @gruv_bg1;
+  color: @gruv_fg0;
+  border-color: @gruv_bg2;
+}
+
+filechooser entry:focus {
+  border-color: @gruv_orange;
+}
+
+/* fila seleccionada en la lista de archivos */
+filechooser list row:selected,
+filechooser treeview.view:selected,
+filechooser treeview.view:selected:focus {
+  background-color: @gruv_orange;
+  color: @gruv_bg0_h;
+}
+
+/* El boton sugerido (OK / Abrir / Guardar) se veia AZUL aunque
+ * theme_selected_bg_color ya era naranja: el Adwaita de GTK3 pinta
+ * .suggested-action con su propio azul compilado (#3584e4), sin pasar por
+ * el color con nombre. Hay que decirselo a mano. Mismo caso el foco. */
+button.suggested-action,
+button.suggested-action:hover,
+headerbar button.suggested-action {
+  background-image: none;
+  background-color: @gruv_orange;
+  color: @gruv_bg0_h;
+  border-color: @gruv_orange_dark;
+  font-weight: bold;
+}
+
+button.suggested-action:hover {
+  background-color: @gruv_yellow;
+}
+
+button.suggested-action:active,
+button.suggested-action:checked {
+  background-image: none;
+  background-color: @gruv_orange_dark;
+  color: @gruv_bg0_h;
+}
+
+button.suggested-action:disabled {
+  background-image: none;
+  background-color: @gruv_bg1;
+  color: @gruv_bg3;
+  border-color: @gruv_bg2;
+}
+
+button.destructive-action {
+  background-image: none;
+  background-color: @gruv_red;
+  color: @gruv_bg0_h;
+  border-color: @gruv_red;
+}
+
+/* anillo de foco: azul de fabrica -> naranja */
+*:focus-visible,
+entry:focus-within {
+  outline-color: @gruv_orange;
+}
+
+/* barra de progreso y selecciones de texto */
+progressbar progress { background-color: @gruv_orange; }
+selection,
+*:selected:focus,
+*:selected {
+  background-color: @gruv_orange;
+  color: @gruv_bg0_h;
+}
+
+/* ----------------------------------------------------------------------
+ * Densidad: el dialogo de fabrica es MUY aireado (filas de sidebar de ~38px,
+ * headerbar gorda). Para un dialogo que se abre, se elige un archivo y se
+ * cierra, eso es scroll de mas. Se aprieta todo un par de pixeles sin llegar
+ * a que quede incomodo de clickear.
+ * -------------------------------------------------------------------- */
+
+/* cabecera */
+filechooser headerbar,
+filechooser .titlebar {
+  min-height: 36px;
+  padding: 0 4px;
+}
+
+filechooser headerbar button {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 2px 10px;
+}
+
+/* sidebar de lugares: filas mas bajas y con la seleccion redondeada, que
+ * es lo que mas se nota a simple vista */
+filechooser placessidebar row,
+placessidebar row {
+  min-height: 26px;
+  padding: 0 4px;
+  margin: 0 4px;
+  border-radius: 6px;
+}
+
+filechooser placessidebar row:selected,
+placessidebar row:selected {
+  border-radius: 6px;
+}
+
+placessidebar row image { padding-right: 6px; }
+
+/* lista de archivos: sin separador vertical y celdas mas ajustadas.
+ * -GtkTreeView-vertical-separator es propiedad de estilo de GTK3 (no CSS
+ * estandar); es la unica via para bajar el alto de fila de un treeview. */
+filechooser treeview.view {
+  -GtkTreeView-vertical-separator: 0;
+  -GtkTreeView-horizontal-separator: 4;
+}
+
+filechooser treeview.view:not(:selected) {
+  background-color: @gruv_bg0_h;
+}
+
+/* cabeceras de columna: que no compitan con el contenido */
+filechooser treeview.view header button {
+  min-height: 24px;
+  padding: 2px 6px;
+  background-image: none;
+  background-color: @gruv_bg0;
+  color: @gruv_bg3;
+  border-color: @gruv_bg2;
+  font-weight: normal;
+}
+
+/* la breadcrumb / entrada de ruta, un poco menos alta */
+filechooser #pathbarbox,
+filechooser .path-bar {
+  padding: 3px 4px;
+}
+
+filechooser .path-bar button {
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+filechooser entry {
+  min-height: 28px;
+  border-radius: 6px;
+}
+
+/* la barra de abajo ("Open files read-only") ocupaba una fila entera */
+filechooser actionbar,
+filechooser .dialog-action-box {
+  min-height: 28px;
+  padding: 2px 6px;
+}
+
+/* separacion sidebar / lista, en vez de dos bloques pegados */
+filechooser placessidebar {
+  border-right: 1px solid @gruv_bg2;
+}
+
+/* ----------------------------------------------------------------------
+ * Glassmorphism, igual que la barra de Quickshell / rofi / wofi.
+ *
+ * El desenfoque NO lo hace GTK: lo hace Hyprland (decoration:blur ya esta
+ * activo en lookandfeel/init.lua, size 6 passes 2) detras de las zonas
+ * translucidas de la ventana. El unico trabajo aca es bajarle el alpha al
+ * FONDO -- no a la ventana entera.
+ *
+ * Por eso NO se usa `opacity` en la window_rule de Hyprland: eso atenua la
+ * ventana COMPLETA, texto e iconos incluidos, y se lee como una ventana
+ * apagada en vez de vidrio. Con rgba() el texto queda opaco sobre un fondo
+ * esmerilado, que es el efecto que tienen la barra y los lanzadores.
+ *
+ * CLAVE (me costo un intento): el alpha va en UN SOLO nivel, el toplevel
+ * `window.background`. Los widgets de adentro van TRANSPARENTES. Si se le
+ * pone rgba(...,0.78) al toplevel y otra vez al `filechooser` de adentro,
+ * los dos se componen: 1-(0.22*0.22) = 0.95 efectivo, o sea opaco. Se veia
+ * exactamente igual que sin vidrio.
+ * -------------------------------------------------------------------- */
+
+/* El unico que lleva alpha, y va al toplevel SI O SI.
+ * Probe acotarlo a `window.background.dialog, window.background.csd` para que
+ * el vidrio fuera solo de los dialogos: no matchea, el efecto desaparece
+ * (verificado con captura). O sea que esto alcanza a TODA ventana GTK3, no
+ * solo al file chooser. Si algun dia molesta en otra app, la salida limpia es
+ * un drop-in de systemd para xdg-desktop-portal-gtk.service con su propio
+ * XDG_CONFIG_HOME, y dejar este gtk.css sin vidrio. */
+window.background {
+  background-color: rgba(29, 32, 33, 0.72);
+}
+
+/* todo lo de adentro deja pasar el fondo del toplevel */
+filechooser,
+filechooser.background,
+filechooser stack.view,
+filechooser .view,
+filechooser treeview.view,
+filechooser treeview.view:not(:selected),
+filechooser scrolledwindow,
+filechooser viewport,
+filechooser box {
+  background-color: transparent;
+}
+
+/* capas apenas mas densas, para que se lean como superficies distintas.
+ * Alphas bajos a proposito: se componen SOBRE el 0.72 del toplevel. */
+filechooser headerbar,
+filechooser .titlebar {
+  background-color: rgba(40, 40, 40, 0.35);
+  border-bottom-color: rgba(80, 73, 69, 0.55);
+}
+
+filechooser placessidebar,
+filechooser placessidebar list {
+  background-color: rgba(40, 40, 40, 0.30);
+  border-right-color: rgba(80, 73, 69, 0.45);
+}
+
+filechooser treeview.view header button {
+  background-color: rgba(40, 40, 40, 0.30);
+}
+
+filechooser actionbar,
+filechooser .dialog-action-box {
+  background-color: rgba(40, 40, 40, 0.25);
+  border-top-color: rgba(80, 73, 69, 0.45);
+}
+
+/* los controles si mantienen cuerpo: sobre vidrio, un boton o un campo de
+ * texto totalmente translucido deja de leerse como control */
+filechooser .path-bar button,
+filechooser headerbar button {
+  background-color: rgba(60, 56, 54, 0.8);
+}
+
+filechooser entry {
+  background-color: rgba(60, 56, 54, 0.88);
+}
+
+/* la seleccion queda SOLIDA a proposito: es lo unico que tiene que ganarle
+ * al fondo sin importar que haya detras */
+filechooser placessidebar row:selected,
+placessidebar row:selected,
+filechooser treeview.view:selected {
+  background-color: @gruv_orange;
+  color: @gruv_bg0_h;
+}

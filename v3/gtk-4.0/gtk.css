@@ -1,0 +1,93 @@
+/*
+ * Misma paleta gruvbox que ../gtk-3.0/gtk.css, pero con los nombres que
+ * usa libadwaita (1.9.3 aca). Esta mitad si queda casi exacta: libadwaita
+ * esta hecho para recolorearse por @define-color, a diferencia del Adwaita
+ * de GTK3 que trae tonos derivados compilados.
+ *
+ * El modo oscuro ya lo pide `org.gnome.desktop.interface color-scheme`
+ * ('prefer-dark'), no hace falta nada aqui para eso.
+ *
+ * Origen de los colores: hypr/hyprland-neo/lookandfeel/init.lua y
+ * quickshell/theme/Colors.qml.
+ */
+
+/* --- paleta gruvbox --------------------------------------------------- */
+@define-color gruv_bg0_h #1d2021;
+@define-color gruv_bg0   #282828;
+@define-color gruv_bg1   #3c3836;
+@define-color gruv_bg2   #504945;
+@define-color gruv_bg3   #665c54;
+@define-color gruv_fg    #ebdbb2;
+@define-color gruv_fg0   #fbf1c7;
+@define-color gruv_orange      #fe8019;
+@define-color gruv_orange_dark #d65d0e;
+@define-color gruv_red    #fb4934;
+@define-color gruv_yellow #fabd2f;
+@define-color gruv_green  #b8bb26;
+@define-color gruv_aqua   #8ec07c;
+
+/* --- acento ----------------------------------------------------------- */
+@define-color accent_bg_color @gruv_orange;
+@define-color accent_fg_color @gruv_bg0_h;
+/* accent_color es el del TEXTO acentuado (links, labels): el naranja puro
+ * sobre fondo oscuro pasa de sobra el contraste, se deja igual. */
+@define-color accent_color    @gruv_orange;
+
+/* --- superficies ------------------------------------------------------ */
+@define-color window_bg_color @gruv_bg0_h;
+@define-color window_fg_color @gruv_fg;
+
+@define-color view_bg_color @gruv_bg0;
+@define-color view_fg_color @gruv_fg;
+
+@define-color headerbar_bg_color       @gruv_bg0;
+@define-color headerbar_fg_color       @gruv_fg0;
+@define-color headerbar_border_color   @gruv_bg2;
+@define-color headerbar_backdrop_color @gruv_bg0_h;
+@define-color headerbar_shade_color    rgba(0, 0, 0, 0.36);
+
+@define-color sidebar_bg_color       @gruv_bg0;
+@define-color sidebar_fg_color       @gruv_fg;
+@define-color sidebar_backdrop_color @gruv_bg0_h;
+@define-color sidebar_border_color   @gruv_bg2;
+@define-color sidebar_shade_color    rgba(0, 0, 0, 0.36);
+
+@define-color secondary_sidebar_bg_color       @gruv_bg0_h;
+@define-color secondary_sidebar_fg_color       @gruv_fg;
+@define-color secondary_sidebar_backdrop_color @gruv_bg0_h;
+@define-color secondary_sidebar_border_color   @gruv_bg2;
+@define-color secondary_sidebar_shade_color    rgba(0, 0, 0, 0.36);
+
+@define-color card_bg_color    @gruv_bg1;
+@define-color card_fg_color    @gruv_fg;
+@define-color card_shade_color rgba(0, 0, 0, 0.36);
+
+@define-color dialog_bg_color @gruv_bg0;
+@define-color dialog_fg_color @gruv_fg;
+
+@define-color popover_bg_color    @gruv_bg1;
+@define-color popover_fg_color    @gruv_fg;
+@define-color popover_shade_color rgba(0, 0, 0, 0.36);
+
+@define-color thumbnail_bg_color @gruv_bg1;
+@define-color thumbnail_fg_color @gruv_fg;
+
+@define-color shade_color           rgba(0, 0, 0, 0.36);
+@define-color scrollbar_outline_color @gruv_bg2;
+
+/* --- estados ---------------------------------------------------------- */
+@define-color destructive_bg_color @gruv_red;
+@define-color destructive_fg_color @gruv_bg0_h;
+@define-color destructive_color    @gruv_red;
+
+@define-color success_bg_color @gruv_green;
+@define-color success_fg_color @gruv_bg0_h;
+@define-color success_color    @gruv_green;
+
+@define-color warning_bg_color @gruv_yellow;
+@define-color warning_fg_color @gruv_bg0_h;
+@define-color warning_color    @gruv_yellow;
+
+@define-color error_bg_color @gruv_red;
+@define-color error_fg_color @gruv_bg0_h;
+@define-color error_color    @gruv_red;
