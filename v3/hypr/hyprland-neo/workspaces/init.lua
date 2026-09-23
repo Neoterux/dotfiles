@@ -97,6 +97,17 @@ function M.setup()
         float = true,
     })
 
+    -- Picture-in-Picture de Firefox: siempre flotante y pinneado (visible en
+    -- todos los workspaces), sin deformar el video al redimensionar. El
+    -- titulo real, verificado con `hyprctl clients`, es "Picture-in-Picture".
+    hl.window_rule({
+        name = "float-firefox-pip",
+        match = { class = "^(firefox)$", title = "^(Picture-in-Picture)$" },
+        float = true,
+        pin = true,
+        keep_aspect_ratio = true,
+    })
+
     hl.window_rule({
         name = "float-opencv-viewer",
         match = { title = "^(OpenCV Viewer)(.*)$" },
