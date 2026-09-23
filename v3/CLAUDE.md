@@ -533,6 +533,42 @@ valores validos son los de `general:layout` (`dwindle` / `master` /
     y se responde con `Hyprland.refreshMonitors()`, que actualiza
     `lastIpcObject` y recalcula los bindings.
 
+### Layout propio `lua:stacked-dwindle` (`hyprland-neo/stacked-dwindle/init.lua`)
+
+Hibrido scroll + dwindle hecho con `hl.layout.register`: el workspace se
+parte en paginas, se ve una sola, y adentro cada una se tilea en espiral.
+Se elige desde el picker de la barra como cualquier otro layout. Binds
+(pensados para el corne, sin capas): SUPER+J/K pagina abajo/arriba,
+SUPER+SHIFT+J/K llevar la ventana, SUPER+N pagina nueva vacia, SUPER+Tab
+ciclar, SUPER+SHIFT+rueda (hacia abajo desde la ultima abre una nueva).
+
+Indicador: `bar/PageIndicator.qml` (un punto por pagina, click salta, "+"
+abre una). El layout no tiene IPC propio, asi que publica su estado en
+`$XDG_RUNTIME_DIR/hyprland-neo/stacked-dwindle.json` y la barra lo mira con
+`FileView { watchChanges: true }` + `reload()` explicito.
+
+Verificado en vivo al escribirlo:
+- El nombre en la regla es `lua:<nombre>`; con el nombre pelado no matchea.
+- `ctx.area` ya viene sin `gaps_out` (y sin la barra); los `gaps_in` entre
+  ventanas los pone el layout a mano.
+- Una caja fuera de `ctx.area` no se dibuja y ningun otro monitor la
+  reclama. Por eso las paginas ocultas van ARRIBA/ABAJO: los monitores
+  estan lado a lado y un corrimiento horizontal caeria en el vecino.
+- `layout_msg` devolviendo `true` dispara un `recalculate`; devolviendo un
+  string o `false`, `hyprctl dispatch` lo muestra como error. Por eso sin
+  ventanas tileadas (todo flotante) se devuelve `true` y no se hace nada, y
+  los binds pasan por `stacked.msg()`, que no despacha fuera de este layout.
+- Enfocar desde adentro de `layout_msg` se difiere con `hl.timer` para no
+  reentrar en el layout.
+- Que ventana esta en que pagina vive en memoria de Lua: un reload (o sea,
+  guardar cualquier archivo de `hyprland-neo/`) manda todo a la pagina 1.
+
+Para probar esto sin mover el foco del usuario:
+`hl.exec_cmd("kitty --title x", { workspace = "9 silent" })`. **Ojo**: los
+`cursor.move` de prueba compiten con el mouse real si el usuario lo esta
+usando. Si una prueba de hover "falla", mira `hyprctl cursorpos` antes de
+buscar el bug.
+
 ### Hyprland-side integration
 
 **`blur` solo no alcanza para los drawers: hace falta ademas

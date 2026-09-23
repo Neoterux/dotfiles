@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Widgets
 import Quickshell.Hyprland
+import Quickshell.Io
 import "../../theme"
 
 // Equivalente a "hyprland/workspaces" de waybar, pero reactivo via la IPC
@@ -20,40 +21,106 @@ Pill {
     fg: Colors.fg
     hPadding: 6 * uiScale
 
-    // El workspace especial (scratchpad, `hl.dsp.workspace.toggle_special("magic")`
-    // en binds/init.lua) tiene nombre "special:<nombre>" -- crudo, ese
-    // string no entra en un circulo de 20px y se desborda pisando los
-    // pills vecinos. Se lo separa del v-for normal y se renderiza aparte,
-    // solo mientras existe (scratchpad abierto), con un icono fijo.
-    readonly property var special: {
-        const list = Hyprland.workspaces.values.filter(w => w.name.indexOf("special:") === 0);
-        return list.length > 0 ? list[0] : null;
+    // Barra duena de este pill: hace falta para saber que scratchpad esta
+    // abierto en ESTE monitor (el pill de cada monitor resalta el suyo).
+    property var panelWindow: null
+    readonly property var monitor: root.panelWindow ? Hyprland.monitorFor(root.panelWindow.screen) : null
+
+    // Los workspaces especiales (scratchpads) se llaman "special:<nombre>"
+    // -- crudo, ese string no entra en un circulo de 20px y se desborda
+    // pisando los pills vecinos. Se separan del v-for normal y se dibujan
+    // aparte: "special:magic" (el de SUPER + P) siempre, y cualquier otro
+    // mientras exista.
+    readonly property var specials: {
+        const names = ["special:magic"];
+        for (const w of Hyprland.workspaces.values) {
+            if (w.name.indexOf("special:") === 0 && names.indexOf(w.name) < 0)
+                names.push(w.name);
+        }
+        return names;
     }
+
+    // El scratchpad abierto en este monitor NO es su `activeWorkspace`: va
+    // en un slot aparte (`specialWorkspace` del IPC crudo). Abrirlo o
+    // cerrarlo solo emite `activespecial`, asi que se re-listan los
+    // monitores ahi (mismo truco que WorkspaceLayout.qml).
+    readonly property string shownSpecial: {
+        const ipc = root.monitor ? root.monitor.lastIpcObject : null;
+        const sp = ipc ? ipc.specialWorkspace : null;
+        return sp && sp.name ? String(sp.name) : "";
+    }
+
+    Connections {
+        target: Hyprland
+
+        function onRawEvent(event) {
+            if (event.name === "activespecial" || event.name === "activespecialv2")
+                Hyprland.refreshMonitors();
+        }
+    }
+
     readonly property var regular: Hyprland.workspaces.values.filter(w => w.name.indexOf("special:") !== 0);
 
-    Rectangle {
-        visible: root.special !== null
-        width: 20 * root.uiScale
-        height: 20 * root.uiScale
-        radius: 8 * root.uiScale
-        color: "transparent"
-        border.width: 1
-        border.color: Colors.accent
+    // Con la config en Lua, `hyprctl dispatch` evalua su argumento como Lua
+    // (ver la nota en hypr/hyprland-neo/workspaces/init.lua): el string
+    // clasico "togglespecialworkspace magic" falla en silencio. Mismo
+    // patron que PowerMenu.qml.
+    Process {
+        id: specialProc
+    }
 
-        Text {
-            anchors.centerIn: parent
-            text: "\u{f0d0}" // nf-fa-magic
-            color: Colors.accent
-            font.family: Colors.fontFamily
-            font.pixelSize: root.fontPixelSize - 1
-            font.bold: true
-        }
+    function specialDispatch(lua: string) {
+        if (specialProc.running)
+            return;
+        specialProc.command = ["hyprctl", "dispatch", lua];
+        specialProc.running = true;
+    }
 
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: if (root.special)
-                root.special.activate()
+    // Un circulo por scratchpad. Borde de acento = tiene ventanas; relleno =
+    // abierto en este monitor; apagado = vacio. Click izq muestra/oculta,
+    // click der manda ahi la ventana activa. "magic" lleva su icono; los
+    // demas, la inicial de su nombre.
+    Repeater {
+        model: root.specials
+
+        delegate: Rectangle {
+            id: sp
+            required property string modelData
+            readonly property string shortName: sp.modelData.substring(8)
+            readonly property bool exists: Hyprland.workspaces.values.some(w => w.name === sp.modelData)
+            readonly property bool shown: root.shownSpecial === sp.modelData
+
+            width: 20 * root.uiScale
+            height: 20 * root.uiScale
+            radius: 8 * root.uiScale
+            color: sp.shown ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.25) : "transparent"
+            border.width: sp.exists ? 1 : 0
+            border.color: Colors.accent
+            opacity: sp.exists || sp.shown ? 1 : 0.4
+
+            Text {
+                anchors.centerIn: parent
+                text: sp.shortName === "magic" ? "\u{f0d0}" : sp.shortName.charAt(0).toUpperCase() // nf-fa-magic
+                color: sp.exists ? Colors.accent : Colors.fg
+                font.family: Colors.fontFamily
+                font.pixelSize: root.fontPixelSize - 1
+                font.bold: true
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: mouse => {
+                    // Los nombres salen de Hyprland (sin comillas); igual se
+                    // escapan porque entran en un string literal de Lua.
+                    const name = sp.shortName.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+                    if (mouse.button === Qt.RightButton)
+                        root.specialDispatch('hl.dsp.window.move({ workspace = "special:' + name + '" })');
+                    else
+                        root.specialDispatch('hl.dsp.workspace.toggle_special("' + name + '")');
+                }
+            }
         }
     }
 

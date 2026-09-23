@@ -101,6 +101,14 @@ Pill {
             name: "monocle",
             icon: "\u{f2d0}", // nf-fa-window_maximize
             hint: "una ventana a la vez"
+        },
+        {
+            // Layout propio en Lua (hypr/hyprland-neo/stacked-dwindle):
+            // paginas que se scrollean, cada una tileada en espiral tipo
+            // dwindle. Sus paginas se ven en PageIndicator.qml.
+            name: "lua:stacked-dwindle",
+            icon: "\u{f24d}", // nf-fa-clone
+            hint: "paginas: scroll + dwindle"
         }
     ]
 

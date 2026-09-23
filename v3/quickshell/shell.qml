@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import "modules/bar" as Bar
 import "modules/notifications" as Notif
+import "modules/hotcorner" as HotCorner
 
 // Punto de entrada de Quickshell (equivalente al `waybar/config` +
 // `style.css`, pero programable). Levanta una barra flotante por cada
@@ -61,6 +62,14 @@ ShellRoot {
                 panelWindow: panel
             }
         }
+    }
+
+    // Esquina inferior izquierda de cada monitor: muestra/oculta el
+    // scratchpad (ver modules/hotcorner/HotCorner.qml).
+    Variants {
+        model: Quickshell.screens
+
+        HotCorner.HotCorner {}
     }
 
     // Toasts de notificaciones nuevas -- una sola ventana, en el primer

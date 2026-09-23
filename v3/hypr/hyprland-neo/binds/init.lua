@@ -1,4 +1,5 @@
 local machine = require('hyprland-neo/lib/machine')
+local stacked = require('hyprland-neo/stacked-dwindle')
 
 local M = {}
 
@@ -80,6 +81,43 @@ function M.setup()
     -- workspace tiene una sola ventana ("can't togglesplit in the current
     -- workspace") -- no hay split que invertir todavia.
     hl.bind(mainMod .. " + mouse:274", hl.dsp.layout("togglesplit"))
+
+    -- Scratchpad (special:magic) con el mouse, ademas de SUPER + P de arriba.
+    --   boton lateral "adelante" (mouse:276): mostrar/ocultar.
+    --   boton lateral "atras"    (mouse:275): mandar ahi la ventana activa,
+    --     que con focus-follows-mouse es la que esta bajo el cursor.
+    --   SHIFT + boton del medio: mostrar/ocultar (el medio solo sigue siendo
+    --     togglesplit).
+    -- La barra (Workspaces.qml) y la esquina inferior izquierda
+    -- (quickshell/modules/hotcorner) hacen lo mismo sin teclado.
+    hl.bind(mainMod .. " + mouse:276", hl.dsp.workspace.toggle_special("magic"))
+    hl.bind(mainMod .. " + mouse:275", hl.dsp.window.move({ workspace = "special:magic" }))
+    hl.bind(mainMod .. " + SHIFT + mouse:274", hl.dsp.workspace.toggle_special("magic"))
+
+    -- Paginas del layout "stacked-dwindle" (ver stacked-dwindle/init.lua).
+    -- Fuera de un workspace "lua:stacked-dwindle" no hacen nada (stacked.msg
+    -- lo chequea antes de despachar).
+    --   J / K: pagina de abajo / de arriba. Las paginas se deslizan en
+    --     vertical, asi que las teclas de vim coinciden con lo que se ve; y en
+    --     el corne estan en la fila base, sin capa. (H/L no: SUPER + L es
+    --     hyprlock.)
+    --   SHIFT + J / K: llevar la ventana activa a la pagina de abajo / de
+    --     arriba; pasando el borde abre una pagina nueva. Mismo esquema que
+    --     vim/i3: sin modificador se mueve uno, con SHIFT se mueve la ventana.
+    --     OJO: NO sigue la inversion del corne de los numeros de arriba -- esa
+    --     existe porque los numeros viven en una capa, y J/K no.
+    --   N: abrir una pagina nueva vacia (lo que se abra ahi, cae ahi).
+    --   TAB: ciclar paginas dando la vuelta (atajo de un solo acorde).
+    --   SHIFT + rueda: scrollear entre paginas; hacia abajo desde la ultima
+    --     abre una nueva (SUPER + rueda sola sigue cambiando de workspace).
+    hl.bind(mainMod .. " + J", stacked.msg("page down"))
+    hl.bind(mainMod .. " + K", stacked.msg("page up"))
+    hl.bind(mainMod .. " + SHIFT + J", stacked.msg("movetopage next"))
+    hl.bind(mainMod .. " + SHIFT + K", stacked.msg("movetopage prev"))
+    hl.bind(mainMod .. " + N", stacked.msg("page new"))
+    hl.bind(mainMod .. " + Tab", stacked.msg("page next"))
+    hl.bind(mainMod .. " + SHIFT + mouse_down", stacked.msg("page down"))
+    hl.bind(mainMod .. " + SHIFT + mouse_up", stacked.msg("page up"))
 end
 
 return M

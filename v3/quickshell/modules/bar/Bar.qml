@@ -113,8 +113,9 @@ Item {
         Launcher { uiScale: root.uiScale; panelWindow: root.panelWindow }
         Backlight { uiScale: root.uiScale }
         Volume { uiScale: root.uiScale; panelWindow: root.panelWindow }
-        Workspaces { uiScale: root.uiScale }
+        Workspaces { uiScale: root.uiScale; panelWindow: root.panelWindow }
         WorkspaceLayout { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        PageIndicator { uiScale: root.uiScale; panelWindow: root.panelWindow }
     }
 
     Clock {

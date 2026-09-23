@@ -21,6 +21,12 @@ require('hyprland-neo/lookandfeel').setup()
 -- ###############
 require('hyprland-neo/autostart').setup()
 
+-- ##############################################
+-- ## Layout "stacked-dwindle" (scroll+dwindle) ##
+-- ##############################################
+-- Antes de binds: los binds de paginas le mandan mensajes a este layout.
+require('hyprland-neo/stacked-dwindle').setup()
+
 -- ##################
 -- ## Keybindings  ##
 -- ##################
