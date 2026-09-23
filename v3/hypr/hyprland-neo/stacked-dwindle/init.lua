@@ -17,6 +17,9 @@
 --                            la ultima pagina abre una nueva vacia
 --   page new              -- abrir una pagina nueva vacia al final e ir ahi
 --   page <n>              -- ir a la pagina n
+--   togglesplit           -- invertir el corte entre la ventana activa y su
+--                            vecina (lado a lado <-> apiladas), como en
+--                            dwindle; es lo que hace SUPER + click del medio
 --   movepage <de> <a>     -- reordenar: la pagina <de> pasa a la posicion
 --                            <a> (lo usa el drawer de PageIndicator.qml)
 --   movetopage next|prev  -- mandar la ventana activa a la pagina de al
@@ -62,6 +65,9 @@ local addresses = {}
 local owner = {}
 -- stable_id -> class, para que el indicador dibuje el icono de cada app
 local classes = {}
+-- stable_id -> true: el corte que hace esa ventana va al reves de lo que
+-- pide el lado mas largo (lo prende/apaga `togglesplit`).
+local flipped = {}
 
 local function wsState(ws)
     local s = state[ws]
@@ -92,14 +98,20 @@ local function gapsIn()
 end
 
 -- Espiral dwindle: cada ventana se queda con la mitad de lo que queda,
--- cortando por el lado mas largo; la ultima se lleva el resto.
-local function spiral(box, n, gap)
+-- cortando por el lado mas largo (o el otro, si `togglesplit` la invirtio);
+-- la ultima se lleva el resto.
+local function spiral(box, page, gap)
+    local n = #page
     local boxes = {}
     local rest = { x = box.x, y = box.y, w = box.w, h = box.h }
     for i = 1, n do
+        local sideBySide = rest.w >= rest.h
+        if flipped[page[i]] then
+            sideBySide = not sideBySide
+        end
         if i == n then
             boxes[i] = rest
-        elseif rest.w >= rest.h then
+        elseif sideBySide then
             local w = (rest.w - gap) / 2
             boxes[i] = { x = rest.x, y = rest.y, w = w, h = rest.h }
             rest = { x = rest.x + w + gap, y = rest.y, w = rest.w - w - gap, h = rest.h }
@@ -230,7 +242,7 @@ local function recalculate(ctx)
     for p, page in ipairs(s.list) do
         local dy = (p - s.active) * (a.h + PAGE_SPACING)
         local box = { x = a.x, y = a.y + dy, w = a.w, h = a.h }
-        for i, b in ipairs(spiral(box, #page, gap)) do
+        for i, b in ipairs(spiral(box, page, gap)) do
             byId[page[i]]:place(b)
         end
     end
@@ -388,6 +400,19 @@ local function layoutMsg(ctx, msg)
             return "stacked-dwindle: movetopage espera next|prev|new"
         end
         movetopage(s, arg)
+        return true
+    elseif cmd == "togglesplit" then
+        -- El corte entre la ventana i y el resto lo hace la ventana i; la
+        -- ultima no corta nada, asi que para ella se invierte el de la
+        -- anterior (el que la separa de su vecina). Con una sola ventana en
+        -- la pagina no hay corte que invertir: no se hace nada.
+        local win = hl.get_active_window()
+        local p, i = findPage(s, win and win.stable_id)
+        if p and #s.list[p] > 1 then
+            local page = s.list[p]
+            local id = page[math.min(i, #page - 1)]
+            flipped[id] = not flipped[id] or nil
+        end
         return true
     elseif cmd == "movepage" then
         if not movePage(s, tonumber(arg), tonumber(arg2)) then
