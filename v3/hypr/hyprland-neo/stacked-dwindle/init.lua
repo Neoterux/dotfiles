@@ -17,6 +17,8 @@
 --                            la ultima pagina abre una nueva vacia
 --   page new              -- abrir una pagina nueva vacia al final e ir ahi
 --   page <n>              -- ir a la pagina n
+--   movepage <de> <a>     -- reordenar: la pagina <de> pasa a la posicion
+--                            <a> (lo usa el drawer de PageIndicator.qml)
 --   movetopage next|prev  -- mandar la ventana activa a la pagina de al
 --                            lado; pasando el borde crea una pagina nueva
 --   movetopage new        -- mandar la ventana activa a una pagina nueva
@@ -58,6 +60,8 @@ local state = {}
 local addresses = {}
 -- stable_id -> ws_id, para resolver la pagina desde el evento de foco
 local owner = {}
+-- stable_id -> class, para que el indicador dibuje el icono de cada app
+local classes = {}
 
 local function wsState(ws)
     local s = state[ws]
@@ -160,8 +164,15 @@ local STATE_DIR = (os.getenv("XDG_RUNTIME_DIR") or "/tmp") .. "/hyprland-neo"
 local STATE_PATH = STATE_DIR .. "/stacked-dwindle.json"
 local lastExport = nil
 
--- {"<ws>":{"active":n,"count":m},...}. Se escribe a mano: el Lua embebido no
--- trae encoder JSON y esto son solo enteros.
+-- {"<ws>":{"active":n,"count":m,"pages":[["kitty","code-oss"],[...]]},...}.
+-- Se escribe a mano: el Lua embebido no trae encoder JSON. Las clases van
+-- escapadas por las dudas, aunque en la practica son identificadores.
+local function jsonString(v)
+    return '"' .. tostring(v):gsub('[%c"\\]', function(c)
+        return string.format("\\u%04x", c:byte())
+    end) .. '"'
+end
+
 local function exportState()
     local ids = {}
     for ws in pairs(state) do
@@ -171,7 +182,16 @@ local function exportState()
     local parts = {}
     for _, ws in ipairs(ids) do
         local s = state[ws]
-        parts[#parts + 1] = string.format('"%d":{"active":%d,"count":%d}', ws, s.active, #s.list)
+        local pages = {}
+        for p, page in ipairs(s.list) do
+            local apps = {}
+            for i, id in ipairs(page) do
+                apps[i] = jsonString(classes[id] or "")
+            end
+            pages[p] = "[" .. table.concat(apps, ",") .. "]"
+        end
+        parts[#parts + 1] = string.format('"%d":{"active":%d,"count":%d,"pages":[%s]}',
+            ws, s.active, #s.list, table.concat(pages, ","))
     end
     local json = "{" .. table.concat(parts, ",") .. "}\n"
     if json == lastExport then
@@ -202,6 +222,7 @@ local function recalculate(ctx)
         byId[id] = t
         addresses[id] = t.window.address
         owner[id] = ws
+        classes[id] = t.window.class
     end
     sync(s, ctx.targets)
 
@@ -294,6 +315,34 @@ local function newPage(s)
     s.fresh = true
 end
 
+-- Reordena: la pagina `from` pasa a la posicion `to`. La pagina visible
+-- sigue siendo la misma (su indice cambia con ella) y `last` se remapea,
+-- porque esta indexado por posicion.
+local function movePage(s, from, to)
+    local n = #s.list
+    if not from or not to or from < 1 or from > n or to < 1 or to > n then
+        return false
+    end
+    if from == to then
+        return true
+    end
+    local order = {}
+    for i = 1, n do
+        order[i] = i
+    end
+    table.insert(order, to, table.remove(order, from))
+    local list, last, active = {}, {}, s.active
+    for newPos, oldPos in ipairs(order) do
+        list[newPos] = s.list[oldPos]
+        last[newPos] = s.last[oldPos]
+        if oldPos == s.active then
+            active = newPos
+        end
+    end
+    s.list, s.last, s.active = list, last, active
+    return true
+end
+
 local function layoutMsg(ctx, msg)
     -- Sin ventanas tileadas (workspace vacio, o todo flotante -- p.ej. las
     -- kitty que float-kitty deja flotando) no hay paginas que mover: se
@@ -306,7 +355,7 @@ local function layoutMsg(ctx, msg)
     local s = wsState(ws)
     sync(s, ctx.targets)
 
-    local cmd, arg = msg:match("^%s*(%S+)%s*(%S*)")
+    local cmd, arg, arg2 = msg:match("^%s*(%S+)%s*(%S*)%s*(%S*)")
     local n = #s.list
     if cmd == "page" then
         local p
@@ -339,6 +388,11 @@ local function layoutMsg(ctx, msg)
             return "stacked-dwindle: movetopage espera next|prev|new"
         end
         movetopage(s, arg)
+        return true
+    elseif cmd == "movepage" then
+        if not movePage(s, tonumber(arg), tonumber(arg2)) then
+            return "stacked-dwindle: movepage espera <de> <a> entre 1 y " .. n
+        end
         return true
     elseif cmd == "sync" then
         return true

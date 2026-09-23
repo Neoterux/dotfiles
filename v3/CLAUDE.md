@@ -542,8 +542,9 @@ Se elige desde el picker de la barra como cualquier otro layout. Binds
 SUPER+SHIFT+J/K llevar la ventana, SUPER+N pagina nueva vacia, SUPER+Tab
 ciclar, SUPER+SHIFT+rueda (hacia abajo desde la ultima abre una nueva).
 
-Indicador: `bar/PageIndicator.qml` (un punto por pagina, click salta, "+"
-abre una). El layout no tiene IPC propio, asi que publica su estado en
+Indicador: `bar/PageIndicator.qml` (un punto por pagina; al pasar el mouse
+abre un drawer con una tarjeta por pagina y los iconos de sus apps: click
+salta, arrastrar reordena via `movepage <de> <a>`, "+" abre una vacia). El layout no tiene IPC propio, asi que publica su estado en
 `$XDG_RUNTIME_DIR/hyprland-neo/stacked-dwindle.json` y la barra lo mira con
 `FileView { watchChanges: true }` + `reload()` explicito.
 
