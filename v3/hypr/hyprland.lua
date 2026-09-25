@@ -42,3 +42,9 @@ require('hyprland-neo/binds').setup()
 -- ## Ventanas y Workspaces     ##
 -- ###############################
 require('hyprland-neo/workspaces').setup()
+
+-- ###########################################
+-- ## Zoom (overlays y ventanas flotantes)  ##
+-- ###########################################
+-- Despues de workspaces: pisa "no-initial-focus-xwayland" para los menus.
+require('hyprland-neo/zoom').setup()
