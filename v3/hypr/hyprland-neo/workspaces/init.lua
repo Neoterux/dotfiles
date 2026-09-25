@@ -108,6 +108,25 @@ function M.setup()
         keep_aspect_ratio = true,
     })
 
+    -- Dialogo de autenticacion de polkit (hyprpolkitagent, hecho con
+    -- hyprtoolkit; el tema sale de hypr/hyprtoolkit.conf). Class verificado
+    -- en vivo con `pkexec true` + `hyprctl clients`. Se trata como un modal
+    -- de sistema: centrado, visible en cualquier workspace, con el resto
+    -- oscurecido y fuera de cualquier captura de pantalla compartida -- es un
+    -- campo de password. El vidrio no va aca (`blur` no es campo de
+    -- window_rule, solo existe `no_blur`): sale solo porque el fondo del
+    -- tema tiene alpha y el blur de decoration esta prendido.
+    hl.window_rule({
+        name = "polkit-modal",
+        match = { class = "^(hyprpolkitagent)$" },
+        float = true,
+        center = true,
+        pin = true,
+        dim_around = true,
+        no_screen_share = true,
+        animation = "popin 85%",
+    })
+
     hl.window_rule({
         name = "float-opencv-viewer",
         match = { title = "^(OpenCV Viewer)(.*)$" },
