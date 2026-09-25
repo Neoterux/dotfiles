@@ -1,0 +1,12 @@
+// Base: "base_keymap": "VSCode" en settings.json. Aca solo lo que VS Code
+// tenia en ~/.config/Code/User/keybindings.json.
+[
+    {
+        // Shift+Enter en la terminal manda ESC+CR: salto de linea sin
+        // enviar en Claude Code y demas TUIs (igual que en VS Code).
+        "context": "Terminal",
+        "bindings": {
+            "shift-enter": ["terminal::SendText", "\u001b\r"],
+        },
+    },
+]

@@ -1,0 +1,318 @@
+// Zed como copia 1:1 de VS Code (~/.config/Code/User/settings.json), para
+// usarlo en su lugar: Zed renderiza todo por Vulkan (RADV aca, el iGPU en
+// AIMachine) y come una fraccion de la RAM de Electron.
+//
+// Este archivo vive en ~/dotfiles/v3/zed y ~/.config/zed es un symlink al
+// DIRECTORIO (no al archivo): Zed guarda los cambios hechos desde la UI
+// reemplazando el archivo, y eso rompe un symlink de archivo.
+//
+// Lo especifico de SPErp (formatters oxfmt/Pint, reglas por lenguaje) va en
+// SPErp/.zed/settings.json, igual que en VS Code va en .vscode/settings.json.
+// Mapa de nombres VS Code -> Zed: https://zed.dev/docs/migrate/vs-code
+{
+    // ---------------------------------------------------------------- base
+    "base_keymap": "VSCode",
+    "telemetry": {
+        "diagnostics": false,
+        "metrics": false,
+    },
+    // Las mismas extensiones en esta PC y en AIMachine (se instalan solas).
+    "auto_install_extensions": {
+        "vue": true,
+        "php": true,
+        "blade": true,
+        "laravel": true,
+        "oxc": true,
+        "html": true,
+        "scss": true,
+        "toml": true,
+        "env": true,
+        "sql": true,
+        "git-firefly": true,
+        "material-icon-theme": true,
+    },
+
+    // ---------------------------------------------------------------- look
+    // workbench.colorTheme "Gruvbox Dark Hard"; siempre oscuro como VS Code.
+    "theme": {
+        "mode": "dark",
+        "light": "One Light",
+        "dark": "Gruvbox Dark Hard",
+    },
+    // VS Code: material-icon-theme (simple-icons no existe para Zed).
+    "icon_theme": "Material Icon Theme",
+
+    // editor.fontFamily 'FiraCode Nerd Font', 'Fira Code', ... tamaño 15,
+    // con ligaduras. La Nerd Font no esta instalada, VS Code tambien caia a
+    // Fira Code; los glifos Nerd salen de CaskaydiaCove como fallback.
+    "buffer_font_family": "Fira Code",
+    "buffer_font_fallbacks": ["CaskaydiaCove Nerd Font Mono"],
+    "buffer_font_features": {
+        "calt": true,
+    },
+    "buffer_font_size": 15,
+    "buffer_line_height": "comfortable",
+    "ui_font_family": "Inter",
+    "ui_font_size": 15,
+    "text_rendering_mode": "subpixel",
+
+    // editor.cursorStyle underline + cursorBlinking smooth
+    "cursor_shape": "underline",
+    "cursor_blink": true,
+
+    // editor.rulers [95]; wordWrap bounded a 5000 = en la practica, al
+    // ancho de la ventana.
+    "wrap_guides": [95],
+    "show_wrap_guides": true,
+    "soft_wrap": "editor_width",
+
+    // editor.minimap: autohide, maxColumn 60, sin caracteres.
+    "minimap": {
+        "show": "auto",
+        "thumb": "hover",
+        "max_width_columns": 60,
+    },
+    // editor.stickyScroll.enabled
+    "sticky_scroll": {
+        "enabled": true,
+    },
+    "inlay_hints": {
+        "enabled": true,
+        "show_background": true,
+    },
+    "scrollbar": {
+        "show": "never",
+    },
+    "active_pane_modifiers": {
+        "border_size": 1.0,
+    },
+
+    // ---------------------------------------------------------------- files
+    // files.trimTrailingWhitespace / insertFinalNewline / eol \n.
+    // formatOnSave global en VS Code esta apagado (solo python y SPErp).
+    "remove_trailing_whitespace_on_save": true,
+    "ensure_final_newline_on_save": true,
+    "format_on_save": "off",
+    "tab_size": 4,
+    // files.exclude. Reemplaza la lista por defecto de Zed, por eso repite
+    // los .git/.svn/... del default.
+    "file_scan_exclusions": [
+        "**/.git",
+        "**/.svn",
+        "**/.hg",
+        "**/.jj",
+        "**/CVS",
+        "**/.DS_Store",
+        "**/Thumbs.db",
+        "**/.classpath",
+        "**/.settings",
+        "**/__pycache__",
+        "**/.mypy_cache",
+        "**/.pytest_cache",
+        "**/.ruff_cache",
+    ],
+    // search.smartCase
+    "use_smartcase_search": true,
+
+    // ---------------------------------------------------------------- git
+    // GitLens: blame de la linea actual.
+    "git": {
+        "inline_blame": {
+            "enabled": true,
+            "delay_ms": 600,
+        },
+    },
+
+    // ---------------------------------------------------------------- panels
+    "tabs": {
+        "file_icons": true,
+        "close_position": "left",
+        "git_status": true,
+        "show_diagnostics": "all",
+    },
+    "project_panel": {
+        "dock": "left",
+        "sticky_scroll": true,
+        "indent_size": 15,
+        "bold_folder_labels": true,
+        "default_width": 280,
+        "sort_order": "default",
+    },
+    "outline_panel": {
+        "dock": "left",
+    },
+    "collaboration_panel": {
+        "button": false,
+        "dock": "left",
+    },
+    "git_panel": {
+        "tree_view": true,
+        "dock": "left",
+    },
+
+    // ---------------------------------------------------------------- terminal
+    // terminal.integrated: cursor que parpadea, contraste minimo alto.
+    "terminal": {
+        "font_family": "CaskaydiaCove Nerd Font Mono",
+        "blinking": "on",
+        "minimum_contrast": 60,
+    },
+
+    // ---------------------------------------------------------------- AI
+    // Los dos vLLM locales (ver ~/.claude/CLAUDE.md): el 5090 para lo
+    // interactivo, el R9700 de respaldo. Solo sirven qwen3-coder-30b con el
+    // perfil `ai-stack coding` activo. vLLM no pide key, pero Zed necesita
+    // alguna para marcar el proveedor como listo: cargar cualquier string
+    // en Agent > Settings.
+    "language_models": {
+        "openai_compatible": {
+            "AIMachine": {
+                "api_url": "http://10.51.15.116:8000/v1",
+                "available_models": [
+                    {
+                        "name": "qwen3-coder-30b",
+                        "display_name": "Qwen3 Coder 30B (5090)",
+                        "max_tokens": 65536,
+                        "capabilities": {
+                            "tools": true,
+                            "images": false,
+                            "parallel_tool_calls": false,
+                            "prompt_cache_key": false,
+                        },
+                    },
+                ],
+            },
+            "ArchAI": {
+                "api_url": "http://10.51.14.173:8000/v1",
+                "available_models": [
+                    {
+                        "name": "qwen3-coder-30b",
+                        "display_name": "Qwen3 Coder 30B (R9700)",
+                        "max_tokens": 65536,
+                        "capabilities": {
+                            "tools": true,
+                            "images": false,
+                            "parallel_tool_calls": false,
+                            "prompt_cache_key": false,
+                        },
+                    },
+                ],
+            },
+        },
+    },
+    "agent": {
+        "dock": "right",
+        "default_model": {
+            "provider": "AIMachine",
+            "model": "qwen3-coder-30b",
+        },
+    },
+    "edit_predictions": {
+        "provider": "zed",
+    },
+
+    // ---------------------------------------------------------------- remote
+    "ssh_connections": [
+        {
+            "host": "10.51.15.116",
+            "args": [],
+            "projects": [
+                {
+                    "paths": ["/home/neoterux/Documents/SPErp"],
+                },
+            ],
+        },
+    ],
+
+    // ---------------------------------------------------------------- languages
+    "languages": {
+        "PHP": {
+            "language_servers": ["phpactor", "!intelephense", "!phptools"],
+        },
+        "TypeScript": {
+            "prettier": {
+                "allowed": true,
+            },
+            "colorize_brackets": true,
+        },
+        "Vue.js": {
+            "prettier": {
+                "allowed": true,
+            },
+        },
+        "Python": {
+            "format_on_save": "on",
+        },
+    },
+    "lsp": {
+        "vue-language-server": {
+            "settings": {
+                "vue.inlayHints.inlineHandlerLeading": true,
+                "vue.inlayHints.missingProps": true,
+                "vue.inlayHints.optionsWrapper": true,
+                "vue.inlayHints.vBindShorthand": true,
+            },
+            "initialization_options": {
+                "typescript": {
+                    "tsdk": "./node_modules/typescript/lib",
+                },
+            },
+        },
+        // Mismo tope que VS Code en SPErp: con 6144 el tsserver moria en
+        // bucle ("Ineffective mark-compacts near heap limit"), 12288 anda.
+        // (Antes aca habia 30000: sin tope real.)
+        "vtsls": {
+            "settings": {
+                "typescript": {
+                    "tsserver": {
+                        "maxTsServerMemory": 12288,
+                    },
+                },
+                "javascript": {
+                    "tsserver": {
+                        "maxTsServerMemory": 12288,
+                    },
+                },
+            },
+        },
+        "typescript-language-server": {
+            "initialization_options": {
+                "tsserver": {
+                    "maxTsServerMemory": 12288,
+                },
+                "preferences": {
+                    "includeInlayParameterNameHints": "all",
+                    "includeInlayParameterNameHintsWhenArgumentMatchesName": true,
+                    "includeInlayFunctionParameterTypeHints": true,
+                    "includeInlayVariableTypeHints": true,
+                    "includeInlayVariableTypeHintsWhenTypeMatchesName": true,
+                    "includeInlayPropertyDeclarationTypeHints": true,
+                    "includeInlayFunctionLikeReturnTypeHints": true,
+                    "includeInlayEnumMemberValueHints": true,
+                },
+            },
+        },
+    },
+
+    // ---------------------------------------------------------------- glass
+    // Vidrio como el resto del rice: fondo con alpha + blur del compositor.
+    "experimental.theme_overrides": {
+        "background.appearance": "blurred",
+        "background": "#1e2122f5",
+        "hint.background": "#1e2122",
+        "syntax": {
+            "comment": {
+                "font_style": "italic",
+            },
+            "hint": {
+                "font_style": "italic",
+            },
+        },
+    },
+    "theme_overrides": {
+        "Gruvbox Dark Hard": {
+            "background.appearance": "blurred",
+            "editor.background": "#00000000",
+        },
+    },
+}

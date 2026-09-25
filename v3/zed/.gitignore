@@ -1,0 +1,5 @@
+# Estado que Zed escribe al lado de la config
+.tmp*
+settings_backup.json
+prompts/
+conversations/
