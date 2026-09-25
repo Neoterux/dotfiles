@@ -4,8 +4,11 @@ local stacked = require('hyprland-neo/stacked-dwindle')
 local M = {}
 
 local mainMod = "SUPER" -- Windows Key como principal
-local filemanager = "dolphin"
-local terminal = "kitty"
+-- Cada app en su propio scope de systemd (ver hypr/scripts/app-scope);
+-- rofi hace lo mismo con su run-command.
+local appScope = os.getenv("HOME") .. "/.config/hypr/scripts/app-scope "
+local filemanager = appScope .. "dolphin"
+local terminal = appScope .. "kitty"
 local menu = "rofi -show drun"
 
 function M.setup()

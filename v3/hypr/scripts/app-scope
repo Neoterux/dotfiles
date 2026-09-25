@@ -1,0 +1,41 @@
+#!/bin/sh
+# Lanza una app grafica en su PROPIO scope de systemd:
+#   app-<nombre>-<azar>.scope  dentro de  app-graphical.slice
+#
+# Por que: Hyprland arranca desde la tty (sin uwsm), asi que todo lo que
+# lanza con hl.exec_cmd / rofi / Quickshell caia en session-1.scope junto
+# con el compositor. El 2026-09-25 ese scope llego a 38G RAM + 20.6G swap y
+# no habia forma de saber QUE app era; nohang termino matando la sesion.
+# Con un scope por app:
+#   * `systemctl --user status 'app-firefox-*'` dice cuanto come, y al
+#     cerrarse queda el "memory peak" en el journal con nombre y apellido.
+#   * se le pueden poner limites por prefijo, p. ej.
+#     ~/.config/systemd/user/app-firefox-.scope.d/memory.conf
+#
+# --scope (y no un .service): el proceso hereda el entorno de quien lo
+# lanza (WAYLAND_DISPLAY, HYPRLAND_INSTANCE_SIGNATURE, ...), igual que antes.
+#
+# Uso: app-scope <comando> [args...]
+# Se llama con ruta absoluta (~/.config/hypr/scripts/app-scope): ni
+# Hyprland ni Quickshell tienen ~/.local/bin en el PATH.
+
+[ $# -gt 0 ] || { echo "uso: app-scope <comando> [args...]" >&2; exit 2; }
+
+# Nombre = binario real, salteando `env` y las asignaciones VAR=valor que
+# ponen algunos .desktop ("env GDK_BACKEND=x11 foo").
+name=
+for arg in "$@"; do
+    case $arg in
+        env | *=*) continue ;;
+        *) name=${arg##*/}; break ;;
+    esac
+done
+# Solo [A-Za-z0-9_]: un '-' en el nombre rompe el match por prefijo de los
+# drop-ins (app-foo-.scope.d) y el resto no es valido en nombres de unidad.
+name=$(printf '%s' "${name:-app}" | tr -c 'A-Za-z0-9_' '_')
+rand=$(od -An -N4 -tx4 /dev/urandom | tr -d ' ')
+
+exec systemd-run --user --scope --quiet --collect \
+    --slice=app-graphical.slice \
+    --unit="app-${name}-${rand}" \
+    -- "$@"

@@ -26,6 +26,11 @@ configuration {
     show-icons:          true;
     icon-theme:          "Adwaita";
     terminal:            "kitty";
+    /* Cada app en su propio scope de systemd (ver hypr/scripts/app-scope).
+       Via `sh -c`: rofi NO expande ${HOME} ni ~ en run-command (lo parte
+       con g_shell_parse_argv y lo ejecuta tal cual), y la sesion no tiene
+       ~/.local/bin en el PATH. {cmd} llega a sh como "$@". */
+    run-command:         "sh -c 'exec \"$HOME/.config/hypr/scripts/app-scope\" \"$@\"' app-scope {cmd}";
 
     display-drun:        "󰍉";
     display-run:         "";

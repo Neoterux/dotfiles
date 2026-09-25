@@ -23,8 +23,18 @@ ColumnLayout {
         return allApps.filter(e => (e.name && e.name.toLowerCase().includes(q)) || (e.genericName && e.genericName.toLowerCase().includes(q))).slice(0, 30);
     }
 
+    // Cada app en su propio scope de systemd (ver hypr/scripts/app-scope);
+    // las de terminal siguen por execute(), que sabe abrirles la terminal.
+    readonly property string appScope: Quickshell.env("HOME") + "/.config/hypr/scripts/app-scope"
+
     function launch(entry) {
-        entry.execute();
+        if (entry.runInTerminal || entry.command.length === 0)
+            entry.execute();
+        else
+            Quickshell.execDetached({
+                command: [appScope].concat(entry.command),
+                workingDirectory: entry.workingDirectory
+            });
         searchField.text = "";
         root.closeRequested();
     }
