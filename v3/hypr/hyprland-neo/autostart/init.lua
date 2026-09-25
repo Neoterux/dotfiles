@@ -1,3 +1,5 @@
+local env = require('hyprland-neo/env')
+
 local M = {}
 
 -- El fix de Bitwarden ya no depende de un script/socat externo:
@@ -15,7 +17,22 @@ local M = {}
 -- hyprpolkitagent (ConditionEnvironment=WAYLAND_DISPLAY) no levanta ->
 -- se rompe todo prompt de polkit (incl. "desbloquear Bitwarden con
 -- autenticacion del sistema").
-local session_bootstrap = {
+--
+-- Bajo uwsm (`uwsm start hyprland-uwsm.desktop`, ver ~/.zprofile) eso lo
+-- hace `uwsm finalize`: exporta WAYLAND_DISPLAY + las variables que se le
+-- pasan a systemd/D-Bus y le avisa a uwsm que el compositor esta listo.
+-- SIN finalize, uwsm espera HYPRLAND_INSTANCE_SIGNATURE en el entorno de
+-- activacion, se vence el timeout y baja la sesion entera. Con eso arranca
+-- graphical-session.target, y de ahi hyprpolkitagent, los portals y las
+-- entradas de XDG autostart (~/.config/autostart) solos.
+-- uwsm se reconoce por UWSM_FINALIZE_VARNAMES, que su plugin de Hyprland
+-- exporta antes de lanzarlo. Otra maquina que arranque Hyprland pelado
+-- sigue por el camino viejo.
+local under_uwsm = os.getenv("UWSM_FINALIZE_VARNAMES") ~= nil
+
+local session_bootstrap = under_uwsm and {
+    "uwsm finalize " .. table.concat(env.names(), " "),
+} or {
     "dbus-update-activation-environment --systemd --all",
     "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE",
     "systemctl --user start hyprpolkitagent.service",
@@ -56,10 +73,11 @@ local commands = {
     "hyprpaper",
     -- GNOME Keyring: Secret Service para Bitwarden (el agente SSH lo
     -- sigue dando gcr-ssh-agent por separado -- gnome-keyring 50.0 ya
-    -- no trae componente "ssh"). Sin --unlock: se deja bloqueado hasta
-    -- el primer pedido de un secreto (dispara el prompt grafico de gcr)
-    -- o desbloqueo manual en Seahorse -- autologin es sin password, asi
-    -- que no hay forma de derivar la clave de desbloqueo automaticamente.
+    -- no trae componente "ssh"). Sin --unlock: el login por autologin
+    -- (`login -f`) no tiene password, asi que el daemon arranca
+    -- bloqueado; lo desbloquea el hyprlock del arranque, cuya password
+    -- pasa por pam_gnome_keyring (ver scripts/session-unlock). Si el
+    -- daemon ya lo levanto PAM, --start solo se engancha a ese.
     "gnome-keyring-daemon --start --components=pkcs11,secrets --daemonize",
     "wl-paste --type text --watch cliphist store",  -- Stores only text data
     "wl-paste --type image --watch cliphist store", -- Stores only image data

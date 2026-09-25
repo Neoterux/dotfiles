@@ -1,0 +1,21 @@
+#!/bin/sh
+# Bloqueo del arranque de sesion (lo lanza hyprland-neo/session cuando el
+# perfil de maquina tiene `session.lock_on_start`).
+#
+# Con autologin, la sesion arranca sin pedir nada y esto la bloquea al
+# instante. La contraseña que se escribe en hyprlock pasa por PAM
+# (/etc/pam.d/hyprlock -> login), y el `auth optional pam_gnome_keyring.so`
+# de ese stack desbloquea el keyring con ella: asi el keyring queda abierto
+# sin guardarlo con contraseña vacia. Requisito: la contraseña del keyring
+# "login" tiene que ser la misma que la del usuario.
+#
+# Recien despues del desbloqueo se lanza `session.after_unlock` (VSCode,
+# servidores, ...): asi arrancan con el keyring ya abierto y no aparecen
+# detras del lock pidiendo secretos.
+#
+# hyprlock sale con 0 solo al autenticar. Si falla o lo matan, NO se lanza
+# nada; la sesion queda bloqueada por Hyprland igual (session lock protocol).
+
+hyprlock || exit $?
+
+exec hyprctl repl 'require("hyprland-neo/session").after_unlock()' >/dev/null

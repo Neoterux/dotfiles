@@ -57,7 +57,15 @@ cp machines/default.json machines/$(hostname).json
 
   "workspace_rules": [             // opcional, reglas que no cuelgan de un monitor
     { "id": 9, "persistent": true, "layout": "master" }
-  ]
+  ],
+
+  "session": {                     // opcional, ver `session` abajo
+    "lock_on_start": true,
+    "after_unlock": [
+      { "command": "code ~/Documents/SPErp", "workspace": "2 silent" },
+      { "command": "./launch-workspace.sh", "cwd": "~/Documents/SPErp" }
+    ]
+  }
 }
 ```
 
@@ -107,3 +115,26 @@ Hyprland abre en ese monitor al arrancar.
 
 Las claves que empiezan con `_` o `$` se ignoran en todos los niveles, por si
 querés dejar notas o un `$schema`.
+
+### `session`
+
+Arranque de sesión de la máquina; lo consume `hyprland-neo/session`.
+
+- `lock_on_start` (bool, default `false`): al arrancar Hyprland se lanza
+  `scripts/session-unlock`, que corre `hyprlock` **antes que cualquier otra
+  cosa**. Es lo que hace seguro el autologin de tty1
+  (`~/dotfiles/scripts/enable-autologin.sh`): la password se pide acá, y como
+  `/etc/pam.d/hyprlock` incluye el stack `login` (con `pam_gnome_keyring.so`),
+  esa misma password desbloquea el keyring. Requisito: la password del keyring
+  "login" tiene que ser la del usuario.
+- `after_unlock` (lista): comandos que se lanzan una sola vez, recién después
+  del primer desbloqueo (con el keyring ya abierto). Sin `lock_on_start`, se
+  lanzan directo al arrancar. Cada entrada es un string o un objeto:
+  - `command` (requerido): se pasa por `sh`, así que `~` se expande. Corre
+    dentro de `scripts/app-scope` (un scope de systemd propio).
+  - `cwd`: directorio donde correrlo (`cd <cwd> && ...`).
+  - `workspace`: workspace donde abrir su ventana, con la sintaxis de las
+    reglas de `hl.exec_cmd` (`"2"`, `"2 silent"`, ...). Sigue al proceso aunque
+    pase por `systemd-run`.
+
+Un `after_unlock` mal formado se ignora con advertencia; nunca tumba el perfil.

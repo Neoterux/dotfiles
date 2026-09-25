@@ -203,6 +203,43 @@ local function normalize_monitor(entry, warn)
     return { spec = spec, workspace_rules = rules }
 end
 
+--- Normaliza el bloque `session`: bloquear al arrancar y que lanzar despues
+--- del primer desbloqueo (ver hyprland-neo/session). Una entrada rota se
+--- ignora con advertencia; nunca tumba el resto del perfil.
+local function normalize_session(raw, warn)
+    local session = { lock_on_start = false, after_unlock = {} }
+    if raw == nil or raw == json.null then
+        return session
+    end
+    if type(raw) ~= "table" then
+        warn("'session' debe ser un objeto, se ignora")
+        return session
+    end
+
+    session.lock_on_start = raw.lock_on_start == true
+
+    for i, entry in ipairs(raw.after_unlock or {}) do
+        if type(entry) == "string" then
+            entry = { command = entry }
+        end
+        if type(entry) ~= "table" or type(entry.command) ~= "string" or trim(entry.command) == "" then
+            warn(string.format("session.after_unlock[%d] sin 'command', se ignora", i))
+        else
+            local workspace = entry.workspace
+            if workspace == json.null then
+                workspace = nil
+            end
+            session.after_unlock[#session.after_unlock + 1] = {
+                command = entry.command,
+                cwd = type(entry.cwd) == "string" and entry.cwd or nil,
+                workspace = workspace ~= nil and workspace_id(workspace) or nil,
+            }
+        end
+    end
+
+    return session
+end
+
 local function normalize(raw, name, source, warnings)
     local function warn(msg)
         warnings[#warnings + 1] = msg
@@ -253,6 +290,8 @@ local function normalize(raw, name, source, warnings)
         end
     end
 
+    profile.session = normalize_session(raw.session, warn)
+
     return profile
 end
 
@@ -277,7 +316,7 @@ end
 local cached
 
 --- Devuelve el perfil de la maquina actual (cacheado por sesion de config).
---- @return table perfil normalizado: { name, source, keyboard, monitors, workspace_rules, warnings }
+--- @return table perfil normalizado: { name, source, keyboard, monitors, workspace_rules, session, warnings }
 function M.get()
     if cached then
         return cached

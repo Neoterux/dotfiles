@@ -85,6 +85,18 @@ local envs = {
 }
 local M = {}
 
+--- Nombres de todas las variables de arriba, para que autostart se las pase
+--- a `uwsm finalize` (systemd --user + D-Bus las necesitan para los portals
+--- y los servicios de graphical-session.target).
+function M.names()
+    local names = {}
+    for key in pairs(envs) do
+        names[#names + 1] = key
+    end
+    table.sort(names)
+    return names
+end
+
 function M.setup()
     for key, value in pairs(envs) do
         hl.env(key, value)

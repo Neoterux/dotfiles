@@ -16,6 +16,12 @@ require('hyprland-neo/monitors').setup()
 -- #########################
 require('hyprland-neo/lookandfeel').setup()
 
+-- ###################################################
+-- ## Sesion: lock al arrancar + apps post-unlock   ##
+-- ###################################################
+-- Antes de autostart: hyprlock tiene que ser lo PRIMERO que se lanza.
+require('hyprland-neo/session').setup()
+
 -- ###############
 -- ## Autostart ##
 -- ###############

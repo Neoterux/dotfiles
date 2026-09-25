@@ -88,6 +88,11 @@ function M.setup()
             },
             splash_font_family = "JetBrains Mono",
             force_default_wallpaper = -1,
+            -- Con autologin + lock al arrancar (hyprland-neo/session), si
+            -- hyprlock se cae la sesion queda en la pantalla roja de "lockscreen
+            -- died" y sin esto no hay forma de volver a entrar. Con esto, desde
+            -- tty2: hyprctl --instance 0 dispatch 'hl.dsp.exec_cmd("hyprlock")'
+            allow_session_lock_restore = true,
             -- Rendimiento en un escritorio de desarrollo (pantalla estatica la
             -- mayor parte del tiempo): no repintar a full framerate cuando nada
             -- se mueve, y no renderizar logo/splash de fondo.
