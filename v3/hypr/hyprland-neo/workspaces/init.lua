@@ -77,10 +77,18 @@ function M.setup()
         suppress_event = "maximize",
     })
 
+    -- Tamaño fijo y centrado: kitty guarda el tamaño/estado de la ULTIMA
+    -- ventana que se cerro (remember_window_size, ~/.cache/kitty/main.json),
+    -- asi que una sola kitty maximizada hacia que todas las siguientes
+    -- abrieran a pantalla completa. Con size aca, lo que recuerde kitty no
+    -- importa; suppress_event ignora su pedido de "maximized".
     hl.window_rule({
         name = "float-kitty",
         match = { class = "kitty", title = "kitty" },
         float = true,
+        center = true,
+        size = "monitor_w*0.4 monitor_h*0.45",
+        suppress_event = "maximize",
     })
 
     hl.window_rule({
