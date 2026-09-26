@@ -35,7 +35,18 @@ done
 name=$(printf '%s' "${name:-app}" | tr -c 'A-Za-z0-9_' '_')
 rand=$(od -An -N4 -tx4 /dev/urandom | tr -d ' ')
 
+# app-graphical.slice (de uwsm) se ordena despues de la sesion grafica: si
+# graphical-session.target no levanto, el start del scope queda en cola
+# PARA SIEMPRE y la app nunca abre (paso el 2026-09-25: .profile arrancaba
+# Hyprland dentro del preloader de uwsm y no se podia lanzar nada). En ese
+# caso se usa app.slice, que siempre esta activo: lanzar no puede depender
+# de que la sesion de systemd este sana.
+slice=app.slice
+if systemctl --user -q is-active graphical-session.target; then
+    slice=app-graphical.slice
+fi
+
 exec systemd-run --user --scope --quiet --collect \
-    --slice=app-graphical.slice \
+    --slice="$slice" \
     --unit="app-${name}-${rand}" \
     -- "$@"
