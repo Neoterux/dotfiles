@@ -2,19 +2,11 @@ pragma Singleton
 import QtQuick
 import Quickshell.Io
 
-// Uso de CPU y memoria + su historial, para los graficos de la barra
-// (Usage.qml). Singleton por lo mismo que TempSensors: una barra por
-// monitor, un solo muestreo.
-//
-// Leer /proc/stat y /proc/meminfo es leer memoria del kernel (no despierta
-// ningun dispositivo), asi que 2s no cuesta nada y el grafico se ve
-// continuo. `.reload()` + `onLoaded`, no `.text()` a secas -- ver el
-// gotcha de FileView en v3/CLAUDE.md.
+// Uso de CPU/RAM y su historial, compartido por las barras de todos los monitores.
 QtObject {
     id: root
 
     readonly property int interval: 2000
-    // 45 muestras x 2s = el ultimo minuto y medio.
     readonly property int historyLen: 45
 
     // 0..1
@@ -24,7 +16,6 @@ QtObject {
     property var cpuHistory: []
     property var memHistory: []
 
-    // En GiB, para el drawer.
     property real memUsedGiB: 0
     property real memTotalGiB: 0
     property real swapUsedGiB: 0
@@ -61,7 +52,6 @@ QtObject {
     function sampleCpu() {
         const line = root.statFile.text().split("\n")[0];
         const fields = line.trim().split(/\s+/).slice(1).map(Number);
-        // idle + iowait cuentan como "no usado".
         const idle = fields[3] + (fields[4] || 0);
         const total = fields.reduce((a, b) => a + b, 0);
 
@@ -86,8 +76,7 @@ QtObject {
         const total = v.MemTotal || 0;
         if (total <= 0)
             return;
-        // MemAvailable y no MemFree: la cache de disco se libera sola,
-        // contarla como "usada" daria 90% todo el tiempo.
+        // MemAvailable: la cache de disco no cuenta como usada.
         const available = v.MemAvailable !== undefined ? v.MemAvailable : total;
         root.mem = Math.max(0, Math.min(1, 1 - available / total));
         root.memHistory = root.push(root.memHistory, root.mem);

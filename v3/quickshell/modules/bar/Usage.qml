@@ -3,9 +3,7 @@ import QtQuick.Layouts
 import "../../theme"
 import "../drawer"
 
-// Uso de CPU y RAM en la barra: icono + grafico del ultimo minuto y medio
-// + porcentaje. Al pasar el mouse, los mismos graficos en grande con el
-// detalle (GiB usados, swap). Los datos salen del singleton SysUsage.
+// Graficos de CPU y RAM en la barra; en grande en el drawer.
 Pill {
     id: root
 
@@ -20,20 +18,15 @@ Pill {
         return Math.round(v * 100) + "%";
     }
 
-    // Ancho fijo para el porcentaje: si no, la pill entera (y todo lo que
-    // esta a su izquierda en la barra) salta cada vez que pasa de 9% a 10%.
+    // Ancho fijo para que la barra no salte al cambiar de digitos.
     TextMetrics {
         id: pctMetrics
         font.family: Colors.fontFamily
         font.pixelSize: root.fontPixelSize
-        // "99%": 100% es raro y solo empuja un caracter; reservarle
-        // lugar dejaba un hueco grande antes de "1%".
         text: "99%"
     }
 
-    // Componentes inline y no un Repeater sobre un array de objetos: ese
-    // array se reconstruye en cada muestra (cambia `history`), y el
-    // Repeater destruiria y recrearia los Canvas cada 2s.
+    // Inline y no Repeater: el Repeater recrearia los Canvas en cada muestra.
     component Segment: RowLayout {
         id: seg
         property string icon
@@ -53,8 +46,6 @@ Pill {
             implicitWidth: 46 * root.uiScale
             implicitHeight: 14 * root.uiScale
             radius: 3 * root.uiScale
-            // Un velo claro y no un tono mas oscuro: contra la barra
-            // translucida, Qt.darker(bg) no se distinguia del fondo.
             color: Qt.rgba(Colors.fg.r, Colors.fg.g, Colors.fg.b, 0.08)
 
             Sparkline {
@@ -135,14 +126,13 @@ Pill {
     }
 
     Segment {
-        // nf-fa-microchip, el mismo icono que la CPU en Temps.qml
+        // nf-fa-microchip
         icon: "\u{f2db}"
         tint: Colors.cpu
         history: SysUsage.cpuHistory
         value: SysUsage.cpu
     }
 
-    // Separacion extra entre CPU y RAM (el spacing del Pill las pegaba).
     Item {
         implicitWidth: 4 * root.uiScale
     }

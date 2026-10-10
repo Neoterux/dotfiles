@@ -13,14 +13,7 @@ import QtQuick
 QtObject {
     id: root
 
-    // Apagada a proposito (2026-10-10). Medido en vivo, 30s por ventana:
-    // animando costaba ~2.3% de un core en quickshell y ~1.2% en Hyprland
-    // (recompone y re-desenfoca la barra en cada frame), y ~0.7 W de GPU
-    // (dentro del ruido). Apagada, la barra entera queda en ~0.4%. Es el
-    // mayor costo continuo del shell; aca se busca calor minimo.
-    // Volver a `true` la prende en barra y drawers a la vez. Ojo: un
-    // hot-reload la deja CONGELADA aunque diga true -- para verla animar
-    // de nuevo hay que reiniciar quickshell.
+    // Apagada: animando costaba ~3.5% de un core entre quickshell y Hyprland.
     property bool enabled: false
     property real time: 0
     property real intensity: 0.14

@@ -3,15 +3,7 @@ import QtQuick.Layouts
 import "../../theme"
 import "../drawer"
 
-// Temperaturas en la barra: CPU, GPU (borde/hotspot), VRAM y cada NVMe,
-// cada una con su icono en el color que usa el dashboard. El valor pasa a
-// amarillo/rojo segun los umbrales de cada tipo de sensor (ver
-// TempSensors.classify). Al pasar el mouse, un drawer con TODOS los
-// sensores de cada chip, incluidos los que no ganan lugar en la barra.
-//
-// La lectura vive en el singleton TempSensors: este modulo solo dibuja,
-// asi las dos barras (una por monitor) no leen los mismos archivos dos
-// veces.
+// Temperaturas en la barra; el drawer lista todos los sensores.
 Pill {
     id: root
 
@@ -46,8 +38,6 @@ Pill {
             required property int index
             spacing: 3 * root.uiScale
 
-            // Separacion extra entre entries: el spacing del Pill (5px)
-            // las dejaba pegadas y "41° 32°" se leia como un solo numero.
             Item {
                 visible: entry.index > 0
                 implicitWidth: 4 * root.uiScale
@@ -60,7 +50,6 @@ Pill {
                 font.pixelSize: root.fontPixelSize
             }
 
-            // Row sin spacing: el del RowLayout separaba "33°" de "/39°".
             Row {
                 Repeater {
                     model: entry.modelData.sensors
@@ -69,7 +58,6 @@ Pill {
                         id: value
                         required property var modelData
                         required property int index
-                        // GPU: "33°/39°" (borde/hotspot) en vez de "33° 39°".
                         text: (value.index > 0 ? "/" : "") + root.tempText(value.modelData)
                         color: root.tempColor(value.modelData)
                         font.family: Colors.fontFamily

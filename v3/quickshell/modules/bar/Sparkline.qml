@@ -1,14 +1,6 @@
 import QtQuick
 
-// Grafico de linea + relleno para una serie 0..1 (mas nuevo a la
-// derecha). Canvas y no QtQuick.Shapes, mismo criterio que
-// dashboard/IOGraph.qml. Lo usa Usage.qml chico en la barra y grande en
-// su drawer.
-//
-// Solo repinta cuando cambia `history` (un push cada 2s), no por frame.
-// La serie se dibuja contra `historyLen` fijo y no contra su largo actual:
-// asi el grafico se llena de derecha a izquierda al arrancar en vez de
-// estirar 2 muestras al ancho entero.
+// Grafico de linea + relleno para una serie 0..1, mas nuevo a la derecha.
 Canvas {
     id: root
 
@@ -27,8 +19,6 @@ Canvas {
         const n = root.history.length;
         const step = w / Math.max(1, root.historyLen - 1);
         const x0 = w - (n - 1) * step;
-        // Margen de medio trazo arriba/abajo: con 100% o 0% la linea
-        // quedaria cortada a la mitad contra el borde del Canvas.
         const top = lw / 2;
         const span = h - lw;
         ctx.beginPath();
