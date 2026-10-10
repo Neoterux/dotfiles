@@ -61,9 +61,9 @@ local envs = {
         SSH agent: single owner is gcr-ssh-agent (unlocked by gnome-keyring at
         login). Exporting it session-wide stops every GUI app - and any shell
         that inherits the session env - from spawning its own stray ssh-agent.
-        UID 1000 is fixed on this box; Hyprland does not expand $XDG_RUNTIME_DIR.
+        Path comes from XDG_RUNTIME_DIR: the UID differs per machine.
     ]]
-    SSH_AUTH_SOCK = '/run/user/1000/gcr/ssh',
+    SSH_AUTH_SOCK = XDG_RUNTIME_DIR .. '/gcr/ssh',
 
     --[[
       GNOME Keyring (Secret Service para Bitwarden). En esta version
