@@ -28,9 +28,13 @@ IPC. The shell is a live product, not a one-off script: prioritize —
    `.SystemTray`) over polling. Where polling is unavoidable (CPU/mem/temp,
    which have no push API), keep intervals as loose as the UI can tolerate
    and reuse a single `FileView`/`Timer` instead of spawning a `Process`
-   per tick. Current cadence: CPU+mem+temps every 2s (`PerformanceTab.qml`),
-   network route check every 10s (`NetworkStatus.qml`), backlight every 1s
-   only while a backlight device exists, uptime every 60s. Loosen these
+   per tick. Current cadence: CPU+mem+temps every 2s (`PerformanceTab.qml`,
+   only while the dashboard is open), bar temps every 3s for CPU/GPU and
+   15s for NVMe (`TempSensors.qml` — an NVMe temp read is an admin command
+   that wakes the drive out of APST, so don't tighten that one), bar
+   CPU/RAM graphs every 2s (`SysUsage.qml`, /proc only), network
+   route check every 10s (`NetworkStatus.qml`), backlight every 1s only
+   while a backlight device exists, uptime every 60s. Loosen these
    first if memory/CPU ever becomes a real concern.
 3. **Extensibility** — new integrations (Discord/Steam-style tray applets,
    media players, future dashboards) should slot into the existing
@@ -53,6 +57,13 @@ quickshell/
       NetworkStatus.qml, BluetoothButton.qml, Terminal.qml, Processes.qml
       PowerMenu.qml, PowerMenuButton.qml
       Clock.qml               centered, hover-opens the Dashboard drawer
+      Temps.qml               temps on the bar (CPU, GPU edge/hotspot, VRAM, each NVMe)
+                               + hover drawer with every hwmon sensor
+      TempSensors.qml         pragma Singleton: discovers /sys/class/hwmon once,
+                               one FileView per sensor, shared by every bar
+      Usage.qml               CPU + RAM sparklines on the bar, bigger ones in its drawer
+      SysUsage.qml            pragma Singleton: /proc/stat + /proc/meminfo, 90s history
+      Sparkline.qml           Canvas line+fill for a 0..1 series (repaints per sample only)
     tray/                    SystemTrayRow.qml + TrayItem.qml (StatusNotifierItem/SNI)
     drawer/Drawer.qml        the ONE shared dropdown/popup component (see below)
     dashboard/               content shown inside Clock's drawer, tabbed

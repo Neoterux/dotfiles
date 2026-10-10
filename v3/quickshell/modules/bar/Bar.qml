@@ -135,6 +135,9 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 8 * root.uiScale
 
+        Usage { uiScale: root.uiScale; panelWindow: root.panelWindow }
+        Temps { uiScale: root.uiScale; panelWindow: root.panelWindow }
+
         Rectangle {
             id: trayContainer
             // Sin applets no hay nada que agrupar: un pill vacio flotando
