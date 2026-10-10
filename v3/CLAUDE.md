@@ -147,13 +147,17 @@ Los que hay y donde se usan:
 | `bar_edge.frag` | `bar/Bar.qml` (la otra mitad del contorno) | no |
 | `glow.frag` | `bar/Workspaces.qml` (workspace enfocado) | no |
 | `dissolve.frag` | `notifications/NotificationToast.qml` (entrada) | no, ~380ms |
-| `bar_sheen.frag` | `bar/Bar.qml` (aurora del fondo) | **si** |
+| `bar_sheen.frag` | `bar/Bar.qml` (aurora del fondo) | **si** — apagada por defecto (`Sheen.enabled: false`) |
 
 **Regla de costo**: la barra vive prendida, asi que un shader con
 uniforms constantes es gratis (QtQuick no repinta si nada cambia) y uno
 animado no. `bar_sheen` es el unico que anima solo, lo mueve un `Timer` a
 ~15fps a proposito (una `NumberAnimation` repinta a la tasa del monitor)
-y se apaga entero con `Bar.sheenEnabled: false`. Cualquier shader nuevo
+y se apaga entero con `Bar.sheenEnabled: false`. **Hoy esta apagada en
+`theme/Sheen.qml`** (`enabled: false`): medida en vivo costaba ~2.3% de
+un core en quickshell + ~1.2% en Hyprland, contra ~0.4% de la barra
+entera sin ella. Ademas, un hot-reload la deja congelada aunque diga
+`true`; para verla animar de nuevo hay que reiniciar quickshell. Cualquier shader nuevo
 que quiera animar en reposo tiene que justificarse igual.
 
 Gotchas propios de esto:
